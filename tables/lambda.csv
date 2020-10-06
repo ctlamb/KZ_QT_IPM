@@ -1,0 +1,6 @@
+Herd,Period,Years,Lambda,95% CI
+Klinse-Za,pre-mgmt,1996-2012,0.89,0.88-0.89
+Klinse-Za,post-mgmt,2014-2020,1.07,1.04-1.09
+Quintette,pre-mgmt,2002-2015,0.94,0.9-0.97
+Quintette,post-mgmt,2016-2020,1.01,0.92-1.1
+Quintette,post-mgmt_iwolf,2017-2020,1.08,0.99-1.16

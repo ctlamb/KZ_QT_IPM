@@ -400,7 +400,7 @@ ggsave(here::here("plots", "KZ_effect_prop.png"), width=7, height=5)
 
   
 ##Summarize population growth
-```{r Summarise growth rates, results='asis'}
+```{r Summarise growth rates}
 
 summary.l <- tribble(
   ~pop,~period,~l, ~l.lower, ~l.upper,
@@ -421,7 +421,8 @@ summary.l <- summary.l%>%
   mutate(`95% CI`=paste(Lamba.Lower,Lambda.Upper, sep="-"))%>%
   select(Herd, Period, Years, Lambda,`95% CI`)
 
-kable(summary.l, caption="Population Growth Rates")
+write_csv(summary.l,here::here("tables", "lambda.csv"))
+kable(summary.l)
 ```
 
 
@@ -436,13 +437,8 @@ summary.effect <- tribble(
 "Quintette","iwolf",qt$mean$diff_geom_mean_lambda_post_to_pre_iwolf, qt$q2.5$diff_geom_mean_lambda_post_to_pre_iwolf,qt$q97.5$diff_geom_mean_lambda_post_to_pre_iwolf)%>%
     mutate_if(is.numeric,function(x) round(x,3))
 
-
-
-gt(summary.effect)%>%
-  tab_header(
-    title = md("Treatment Effect")
-  ) 
-
+write_csv(summary.effect,here::here("tables", "treatment_effect.csv"))
+kable(summary.effect)
 ```
 
 
@@ -485,8 +481,6 @@ summary.vr <- summary.vr%>%
 colnames(summary.vr) <- c("Group", "Period", "Years", "AF Survival","95% CI", "Recruitment","r95% CI")
 
 
-gt(summary.vr)%>%
-  tab_header(
-    title = md("Vital Rates")
-  ) 
+write_csv(summary.vr,here::here("tables", "vital_rates.csv"))
+kable(summary.vr)
 ```
