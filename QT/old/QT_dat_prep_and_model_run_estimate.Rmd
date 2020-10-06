@@ -1,0 +1,649 @@
+---
+title: "Klinse-Za Caribou IPM"
+author: "Sara Williams, Hans Martin, and Clayton Lamb"
+date: '`r format(Sys.time(), "%d %B, %Y")`'
+output: github_document
+---
+
+###Check body condition based on whether female had a calf the year before
+```{r render, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, results='hide'}
+rmarkdown::render(here::here("QT",'QT_dat_prep_and_model_run.Rmd'),
+                  output_file = "README.md")
+
+knitr::purl(input=here::here("QT",'QT_dat_prep_and_model_run.Rmd'),
+            output=here::here("QT",'QT_dat_prep_and_model_run.R'))
+```
+
+##Load Data
+```{r Load packages and data, results='hide', message=FALSE, warning=FALSE}
+library(ggmcmc)
+library(jagsUI)
+library(knitr)
+library(gt)
+library(ggallin)
+library(hrbrthemes)
+library(tidyverse)
+library(rjags)
+library(MCMCvis)
+library(here)
+
+##define fn
+gm_mean = function(a){prod(a)^(1/length(a))}
+
+
+# Read in raw data
+adult_female_survival <- read.csv(here::here("data", "QT", "adult_female_survival_QT.csv"))
+adult_female_recruit <- read.csv(here::here("data", "QT", "adult_female_recruit_QT.csv"))
+
+adult_sex_ratio <- read.csv(here::here("data", "QT", "adult_sexratio_QT.csv"))
+
+adult_female_surveycount <- read.csv(here::here("data", "QT", "adult_female_surveycount_QT.csv"))
+adult_female_mincount <- read.csv(here::here("data", "QT", "adult_female_mincount_QT.csv"))
+calf_surveycount <- read.csv(here::here("data", "QT", "calf_surveycount_QT.csv"))
+calf_mincount <- read.csv(here::here("data", "QT", "calf_mincount_QT.csv"))
+
+sightability <- read.csv(here::here("data", "QT", "sightability_QT.csv"))
+```
+
+##Prep sightability bootstrap
+```{r sight bootstrap, results='hide', message=FALSE, warning=FALSE}
+
+for(i in 1:nrow(sightability)){
+  if(!is.na(sightability[i,"seen"])){
+    a <-data.frame(outcome=c(rep(1,times=sightability[i,"seen"]),
+                         rep(0,times=sightability[i,"out"]-sightability[i,"seen"])))
+    
+    boot.summary <- c()
+    for(boot in 1:1000){
+  b <- a%>%sample_frac(1, replace=TRUE)%>%summarise(mean=mean(outcome))
+     boot.summary[boot]<- b[[1]]
+    }
+    
+    mean(boot.summary)
+    sightability[i,"SD"] <-sd(boot.summary)
+  }
+}
+
+sightability <-
+  sightability%>%
+  mutate(Mean=seen/out)%>%
+  select(Year,Mean,SD,Pop,Pop_desc,Wolf_control_pen)
+
+
+ggplot(sightability, aes(x = Year, y = Mean)) +
+    geom_errorbar(aes( ymin=Mean-SD, ymax=Mean+SD),alpha=0.5)+
+  geom_point() +
+  theme_ipsum()+
+  theme_ipsum()+
+  geom_hline(yintercept = 1)+
+  labs(x="Year", y="Sightability", title="Sightability during census")+
+  expand_limits(y=0)
+```
+
+##Get AF and calf estimates together
+```{r AF pop, results='hide', message=FALSE, warning=FALSE}
+adult_female_estimate <- adult_female_surveycount%>%
+  mutate(Mean=NA)
+
+for(i in 1:nrow(adult_female_surveycount)){
+  AF_est <- adult_female_surveycount$Mean[i]/sightability$Mean[i]
+  if(!is.na(AF_est)){
+    if(AF_est<adult_female_mincount$Mean[i]){
+      AF_est <- adult_female_mincount$Mean[i]
+    }
+  }
+  adult_female_estimate$Mean[i] <-  AF_est
+}
+
+
+adult_female_estimate$SD <-adult_female_estimate$Mean*sightability$SD
+
+ggplot(adult_female_estimate%>%
+         mutate(type="estimate")%>%
+         rbind(adult_female_mincount%>%
+                 mutate(type="mincount")),
+       aes(x = Year, y = Mean, color=type)) +
+    geom_errorbar(aes( ymin=Mean-SD, ymax=Mean+SD),alpha=0.5)+
+  geom_point() +
+  theme_ipsum()+
+  theme_ipsum()+
+  labs(x="Year", y="Abundance", title="Adult Female Estimate vs MinCount")+
+  expand_limits(y=0)
+
+
+
+
+##calves
+female_calf_estimate <- calf_surveycount%>%
+  mutate(Mean=NA)
+
+for(i in 1:nrow(calf_surveycount)){
+  C_est <- calf_surveycount$Mean[i]/sightability$Mean[i]
+  if(!is.na(C_est)){
+    if(C_est<calf_mincount$Mean[i]){
+      C_est <- calf_mincount$Mean[i]
+    }
+  }
+  female_calf_estimate$Mean[i] <-  C_est/2 ##50:50 sex ratio
+}
+
+
+
+
+female_calf_estimate$SD <-female_calf_estimate$Mean*sightability$SD
+
+
+```
+
+
+##Prep for IPM
+```{r Prep for IPM, results='hide', message=FALSE, warning=FALSE}
+#  Years of study
+yrs <-  seq(from = 2001, to = 2020, by = 1)
+nyr <- length(yrs)
+yr_idx <- seq(from = 1, to = nyr, by = 1)
+yr_df <- as.data.frame(cbind(yrs, yr_idx))
+
+
+	
+#  Wolf and pen indicator per year
+wolfpen_ind <- adult_female_estimate$Wolf_control_pen
+
+
+#  Create vectors of sex ratio
+adult_sex_ratio <- adult_sex_ratio$Mean
+
+
+#  Mean minimum coun of calves from not penned population
+mean_calf_estimate <- mean(female_calf_estimate$Mean, na.rm = TRUE)
+
+#  Combined minimum count of female calves across penned and control (not penned) population units
+combined_female_calf_estimate <-female_calf_estimate %>%
+	as.data.frame() %>%
+	mutate(Pop = NA, Pop_desc = NA)
+mean_combined_female_calf_estimate <- mean(combined_female_calf_estimate$Mean, na.rm = TRUE)
+
+
+#  Mean minimum count of adult females combined across penned 
+#   and control (not penned) population units
+mean_combined_female_adult_estimate <- mean(adult_female_estimate$Mean, na.rm = TRUE)
+
+
+#  Prepare values for priors for survival and recruitment from mean data values
+
+#  Recruitment 
+adult_female_recruit <- adult_female_recruit%>%	mutate(
+	  Mean=Mean/2,
+	  SD=SD/2)
+
+meanr <- array(NA, c(3,1,2)) 
+meanr[3,1,1] <- mean(adult_female_recruit$Mean, na.rm = TRUE)
+meanr[3,1,2] <- 100
+
+# Survival - need estimates for both penned and control (not penned) population units
+#  Survival rate is assumed the same across subadult 1, subadult 2 and adult
+means <- array(NA, c(3,1,2))
+
+adult_female_survival_control <- adult_female_survival %>%
+	dplyr::filter(Pop == 1) 
+
+
+means[2:3,1,1] <- mean(adult_female_survival_control$Mean, na.rm = TRUE)
+means[2:3,1,2] <- 100
+
+
+
+# Starting population size of population unit (vector of values for each age class)
+n1 <- numeric()
+n1[1] <- female_calf_estimate$Mean[2] 
+n1[2] <- adult_female_estimate$Mean[2]*.15  # using year 2 bcause year 1 is NA; arbitrary proportion of sub adults
+n1[3] <- adult_female_estimate$Mean[2]*.85  # using year 2 bcause year 1 is NA; arbitrary proportion of adults 
+
+
+# Sightability
+meansight <- array(NA, c(1,1,2))
+
+meansight[1,1,1] <- mean(sightability$Mean, na.rm = TRUE)
+meansight[1,1,2] <-mean(sightability$SD, na.rm = TRUE)
+
+#  Format data for use in JAGS model
+
+#  Minium counts of all individuals (only females in this set up) combined over penned and control (not penned) 
+#   population units 
+mindat <- adult_female_estimate %>%
+	rbind(female_calf_estimate) %>%
+	group_by(Year) %>%
+	mutate(sum = sum(Mean, na.rm = TRUE),
+	       sum.error = sum(SD, na.rm = TRUE)) %>%
+	slice(1) %>%
+	as.data.frame() %>%
+	mutate(dau = 1, 
+		age = NA,
+		pop = NA,
+		mu = round(sum),
+		tau = 1/ (sum.error * sum.error)) %>%
+	dplyr::filter(mu > 4) %>%
+	left_join(yr_df, by = c("Year" = "yrs")) %>%
+	dplyr::select(dau, yr = yr_idx, age, pop, mu, tau) 
+nmin <- nrow(mindat)
+
+#  Survival estimates by year of penned and control (not penned) population units separately
+sdat <- rbind(
+	adult_female_survival %>%
+	mutate(dau = 1, 
+		age = 3,
+		pop = Pop,
+		mu = Mean,
+		tau = 1/ (SD * SD)) %>%
+	dplyr::filter(!is.na(mu)) %>%
+	left_join(yr_df, by = c("Year" = "yrs")) %>%
+	dplyr::select(dau, yr = yr_idx, age, pop, mu, tau),
+	adult_female_survival %>%
+	mutate(dau = 1, 
+		age = 2,
+		pop = Pop,
+		mu = Mean,
+		tau = 1/ (SD * SD)) %>%
+	dplyr::filter(!is.na(mu)) %>%
+	left_join(yr_df, by = c("Year" = "yrs")) %>%
+	dplyr::select(dau, yr = yr_idx, age, pop, mu, tau))
+sdat$tau[sdat$tau == "Inf"] <- 100
+ns <- nrow(sdat)	
+
+#  Recruitment estimates by year of control (not penned) population unit
+rdat <- adult_female_recruit  %>%
+	mutate(dau = 1, 
+		age = NA,
+		pop = Pop,
+		mu = Mean,
+		tau = 1/ (SD * SD)) %>%
+	dplyr::filter(!is.na(mu)) %>%
+	left_join(yr_df, by = c("Year" = "yrs")) %>%
+	dplyr::select(dau, yr = yr_idx, age, pop, mu, tau) 
+nr <- nrow(rdat)
+
+
+abunddat <- adult_female_estimate %>% ## this is the object read in by the new data file
+     mutate(dau = 1, 
+        age = NA,
+        pop = NA,
+        mu = Mean,
+        tau = 1/ (SD * SD)) %>%
+     dplyr::filter(mu > 4) %>%
+     left_join(yr_df, by = c("Year" = "yrs")) %>%
+     dplyr::select(dau, yr = yr_idx, age, pop, mu, tau) 
+nabund <- nrow(abunddat)
+
+
+
+sightabilitydat <- sightability %>% ## this is the object read in by the new data file
+     mutate(dau = 1, 
+        age = NA,
+        pop = 1,
+        mu = Mean,
+        tau = 1/ (SD * SD)) %>%
+     drop_na(mu) %>%
+     left_join(yr_df, by = c("Year" = "yrs")) %>%
+     dplyr::select(dau, yr = yr_idx, age, pop, mu, tau) 
+nsight <- nrow(sightabilitydat)
+sight_index <- abunddat[,2]
+```
+
+
+
+## Run model in JAGS
+```{r Run model in JAGS, results='hide', message=FALSE, warning=FALSE}
+# MCMC params
+nt <- 1
+nb <- 10000
+nc <- 3
+nad <- 20000
+ni <- 120000
+
+
+#  Gather data inputs in a list
+ipm_dat <- list(nyr = nyr,
+	nmin = nmin,
+	ns = ns,
+	nr = nr,
+	wolfpen_ind = wolfpen_ind,
+	means = means,
+	meanr = meanr,
+	n1 = n1, 
+	adult_sex_ratio = adult_sex_ratio,
+	mindat = mindat, 
+	sdat = sdat, 
+	rdat = rdat,
+	nabund=nabund,
+	abunddat=abunddat,
+	sightabilitydat=sightabilitydat,
+	nsight=nsight,
+	meansight=meansight,
+	sight_index=sight_index)
+
+
+#  Initial values for N to avoid parent node erros
+Nst <- array(10, c(nyr,3,1))
+ipm_inits <- function(){ 
+		list(N = Nst)}
+	
+	
+#  Model parameters to monitor
+model_parms <- c("lambda","logla",
+	"totN", 
+	"N", "S", "R", "r",
+	"wolfpen_eff_r", "wolfpen_eff_s",
+	"sa_yr", "ssa_yr", "r_yr", 
+	"totCalves", 
+	"totAdults",
+	"totN",
+	"totAdultsMF", "totCalvesMF", "totNMF",
+	"geom_mean_lambda",
+	"geom_mean_lambda_pre", "geom_mean_lambda_post",
+	"diff_geom_mean_lambda_post_to_pre","diff_geom_mean_lambda_post_to_pre_iwolf",
+	"geom_mean_lambda_post_iwolf",
+	"mean_surv_pre", "mean_surv_post",
+	"mean_r_pre", "mean_r_post",
+	"Sight")
+
+
+#  Run model with survival and recruitment varying per year
+#  Adjust n.cores for your computer
+out_rnd_eff <- jagsUI::jags(ipm_dat, 
+		inits = ipm_inits,
+		model_parms,
+		model.file = here::here("jags","QT_IPM_rnd_eff_CL_census.txt"),
+		n.chains = nc, 
+		n.iter = ni,
+		n.burnin = nb,
+		n.thin = nt,
+		n.adapt = nad,
+		parallel = TRUE,
+		n.cores = 7)	
+
+#save(out_rnd_eff, file = "out_rnd_eff.Rdata")
+
+```
+
+##MODEL DIAGNOSTICS
+```{r MODEL DIAGNOSTICS, results='hide', message=FALSE, warning=FALSE}
+MCMCtrace(out_rnd_eff, 
+        params = "totAdult",
+        ISB = FALSE,
+        pdf = FALSE)
+
+MCMCsummary(out_rnd_eff)%>%filter(n.eff<400)
+
+```
+
+##ABUNDANCE
+```{r Plot results-abundance, results='hide', message=FALSE, warning=FALSE}
+res_df <- data.frame(rbind(yr_df,yr_df),
+                     est=c(out_rnd_eff$mean$totAdults, out_rnd_eff$mean$lambda),
+                     q2.5=c(out_rnd_eff$q2.5$totAdults, out_rnd_eff$q2.5$lambda),
+                     q97.5=c(out_rnd_eff$q97.5$totAdults, out_rnd_eff$q97.5$lambda),
+                     param=rep(c("Abundance_F", "Lambda"), each=nyr))
+
+res_df <- res_df[-(nyr+1),]
+
+ggplot(res_df,aes(x = yrs, y = est, ymin=q2.5, ymax=q97.5, fill=param)) +
+  geom_cloud(steps=20, max_alpha = 1,se_mult=1.96)+
+  geom_line() +
+  geom_point() +
+  theme_ipsum()+
+  theme(legend.position = "none")+
+  ylab("Estimate")+
+  xlab("Year")+
+  facet_wrap(vars(param), scales="free_y")+
+  geom_vline(xintercept = 2016.5)+
+  labs(x="Year",title="Population Growth Trajectory")
+
+
+
+res_df%>%rbind(data.frame(rbind(yr_df),
+                          est=c(out_rnd_eff$mean$totNMF),
+                          q2.5=c(out_rnd_eff$q2.5$totNMF),
+                          q97.5=c(out_rnd_eff$q97.5$totNMF),
+                          param=rep(c("MinCount_All"), each=nyr)))%>%
+  filter(param!="Lambda")%>%
+  ggplot(aes(x = yrs, y = est, ymin=q2.5, ymax=q97.5, fill=param)) +
+  geom_cloud(steps=20, max_alpha = 1,se_mult=1.96)+
+  geom_line() +
+  geom_point() +
+  theme_ipsum()+
+  theme(legend.position = "none")+
+  ylab("Estimate")+
+  xlab("Year")+
+  facet_wrap(vars(param), scales="free_y")+
+  geom_vline(xintercept = 2016.5)+
+    labs(x="Year",title="Population Abundance and Trajectory")+
+  expand_limits(y=0)
+
+#ggsave(here::here("plots", "abundance_MF.png"), width=5, height=8)
+```
+
+##GROUP SPECIFIC VITAL RATES
+```{r Plot results-vital rates, results='hide', message=FALSE, warning=FALSE}
+#R
+pop_df_r <- data.frame(estimate=c(out_rnd_eff$mean$N[,1,1]/out_rnd_eff$mean$N[,3,1]),
+                       lower=c(out_rnd_eff$q2.5$N[,1,1]/out_rnd_eff$q2.5$N[,3,1]),
+                       upper=c(out_rnd_eff$q97.5$N[,1,1]/out_rnd_eff$q97.5$N[,3,1]),
+                       pop=rep(c("Free"), each=nyr),
+                       param="Recruitment",
+                       yrs=rep(yrs, times=1))%>%
+  mutate(lower=case_when(lower<0~0,
+                         TRUE~lower))
+
+#S
+pop_df_s <- data.frame(estimate=c(out_rnd_eff$mean$S[,3,1]),
+                       lower=c(out_rnd_eff$q2.5$S[,3,1]),
+                       upper=c(out_rnd_eff$q97.5$S[,3,1]),
+                       pop=rep(c("Free"), each=nyr),
+                       param="Survival",
+                       yrs=rep(yrs, times=1))
+
+
+
+# pop_df <- data.frame(estimate=pop_df_s$estimate/(1-pop_df_r$estimate),
+#                      lower=pop_df_s$lower/(1-pop_df_r$lower),
+#                      upper=pop_df_s$upper/(1-pop_df_r$upper),
+#                      pop=rep(c("Free", "Pen"), each=nyr),
+#                      yrs=rep(yrs, times=2))
+
+pop_df <- data.frame(estimate=pop_df_s$estimate+pop_df_r$estimate,
+                     lower=pop_df_s$lower+pop_df_r$lower,
+                     upper=pop_df_s$upper+pop_df_r$upper,
+                     pop=rep(c("Free"), each=nyr),
+                     yrs=rep(yrs, times=1))
+
+pop_df2 <- rbind(pop_df_r, pop_df_s)
+
+ggplot(pop_df2%>%
+         filter(yrs>2000)%>%
+         mutate(estimate=case_when(param=="Recruitment" & yrs<2015 & pop=="Pen"~NA_real_, 
+                                   param=="Survival" & yrs<2014 & pop=="Pen"~NA_real_, 
+                                   TRUE~estimate)),
+       aes(x = yrs, y = estimate, fill=pop)) +
+  geom_line(aes(color=pop)) +
+  geom_cloud(aes( ymin=lower, ymax=upper),steps=20, max_alpha = 1,se_mult=1.96)+
+  theme_ipsum()+
+  theme_ipsum()+
+  labs(x="Year", y="Rate", title="Annual vital rates")+
+  facet_wrap(vars(param), scales="free_y")+
+    geom_vline(xintercept = 2016.5)
+
+#ggsave(here::here("plots", "vital_rates.png"), width=8, height=5)
+```
+
+##COMPARE TO RAW VITAL RATE DATA
+```{r Plot results-vital rates vs raw data, results='hide', message=FALSE, warning=FALSE}
+calc.vr <- pop_df2%>%
+         filter(yrs>2001)
+
+raw.vr <- rbind(adult_female_survival%>%mutate(param="Survival",
+                                         pop=case_when(Pop_desc%in%"Control"~"Free",TRUE~as.character(Pop_desc)),
+                                         estimate=Mean,
+                                         lower=NA,
+                                         upper=NA,
+                                         yrs=Year)%>%
+  dplyr::select(estimate,lower,upper,pop,param,yrs),  ###ADD AFS
+  
+  adult_female_recruit%>%mutate(param="Recruitment",
+                                         pop=case_when(Pop_desc%in%"Control"~"Free",TRUE~as.character(Pop_desc)),
+                                         estimate=Mean,
+                                         lower=NA,
+                                         upper=NA,
+                                         yrs=Year)%>%
+   dplyr::select(estimate,lower,upper,pop,param,yrs))  ###ADD FREE RECRUIT
+  
+          
+  
+calc.vr%>%mutate(class="modelled")%>%
+  rbind(raw.vr%>%mutate(class="raw"))%>%
+ggplot(aes(x = yrs, y = estimate, fill=class)) +
+  geom_line(aes(color=class)) +
+  theme_ipsum()+
+  theme_ipsum()+
+  labs(x="Year", y="Rate", title="Comparing modelled vs raw vital rate")+
+  facet_wrap(vars(param,pop), scales="free_y")+
+    geom_vline(xintercept = 2016.5)
+
+#ggsave(here::here("plots", "vital_rates.png"), width=8, height=5)
+```
+
+##COMPARE TO RAW COUNT DATA
+```{r Plot results-counts vs raw data, fig.height=6, fig.width=6, message=FALSE, warning=FALSE, results='hide'}
+
+calc.abund <- res_df%>%rbind(data.frame(rbind(yr_df),
+                          est=c(out_rnd_eff$mean$totNMF),
+                          q2.5=c(out_rnd_eff$q2.5$totNMF),
+                          q97.5=c(out_rnd_eff$q97.5$totNMF),
+                          param=rep(c("MinCount_All"), each=nyr)))%>%
+  filter(param=="Abundance_F")
+
+
+raw.abund <-adult_female_estimate%>%mutate(param="MinCount_F",
+                                         est=Mean,
+                                         q2.5=NA,
+                                         q97.5=NA,
+                                         yrs=Year,
+                                         yr_idx=NA)%>%
+  select(colnames(calc.abund))%>%
+mutate(param="MinCount_F")
+
+
+
+
+calc.abund%>%mutate(class="modelled")%>%
+  rbind(raw.abund%>%as.data.frame()%>%mutate(class="observed"))%>%
+ggplot(aes(x = yrs, y = est, fill=class)) +
+    geom_cloud(aes( ymin=q2.5, ymax=q97.5),steps=20, max_alpha = 1,se_mult=1.96)+
+  geom_line(aes(color=class)) +
+  geom_point(aes(color=class)) +
+  theme_ipsum()+
+  theme_ipsum()+
+  labs(x="Year", y="Abundance", title="Comparing modelled vs raw abundance")+
+    geom_vline(xintercept = 2016.5)+
+  expand_limits(y=0)
+
+
+```
+
+
+
+##Summarize vital rates
+```{r Plot results-summarise vital rates, results='asis'}
+
+summary.s <- tribble(
+  ~pop,~s, ~s.lower, ~s.upper,
+"pre-mgmt",out_rnd_eff$mean$mean_surv_pre, out_rnd_eff$q2.5$mean_surv_pre,out_rnd_eff$q97.5$geom_mean_lambda_pre,
+"post-mgmt", out_rnd_eff$mean$mean_surv_post, out_rnd_eff$q2.5$mean_surv_post, out_rnd_eff$q97.5$mean_surv_post)
+
+
+summary.r <- tribble(
+  ~pop,~r, ~r.lower, ~r.upper,
+"pre-mgmt",out_rnd_eff$mean$mean_r_pre, out_rnd_eff$q2.5$mean_r_pre,out_rnd_eff$q97.5$geom_mean_lambda_pre,
+"post-mgmt", out_rnd_eff$mean$mean_r_post, out_rnd_eff$q2.5$mean_r_post, out_rnd_eff$q97.5$mean_r_post)
+
+summary.vr <- summary.s%>%
+  left_join(summary.r)%>%
+  mutate_if(is.numeric,function(x) round(x,2))
+
+
+summary.vr$Years <- c("2002-2015", "2016-2020")
+
+summary.vr <- summary.vr%>%
+  mutate(`s 95% CI`=paste(s.lower,s.upper, sep="-"),
+         `r 95% CI`=paste(r.lower,r.upper, sep="-"))%>%
+  dplyr::select(pop, Years, s,`s 95% CI`, r,`r 95% CI`)
+
+
+
+colnames(summary.vr) <- c("Group", "Years", "AF Survival","95% CI", "Recruitment","r95% CI")
+
+
+gt(summary.vr)%>%
+  tab_header(
+    title = md("Vital Rates")
+  ) 
+```
+
+  
+  
+  
+##Summarize population growth
+```{r Plot results-summarise growth rates, results='asis'}
+
+
+summary.l <- tribble(
+  ~pop,~l, ~l.lower, ~l.upper,
+"pre-mgmt",out_rnd_eff$mean$geom_mean_lambda_pre, out_rnd_eff$q2.5$geom_mean_lambda_pre,out_rnd_eff$q97.5$geom_mean_lambda_pre,
+"post-mgmt", out_rnd_eff$mean$geom_mean_lambda_post, out_rnd_eff$q2.5$geom_mean_lambda_post, out_rnd_eff$q97.5$geom_mean_lambda_post,
+"post-mgmt_iwolf", out_rnd_eff$mean$geom_mean_lambda_post_iwolf, out_rnd_eff$q2.5$geom_mean_lambda_post_iwolf, out_rnd_eff$q97.5$geom_mean_lambda_post_iwolf)%>%
+  mutate_if(is.numeric,function(x) round(x,2))
+
+
+summary.l$Years <- c("2002-2015", "2016-2020", "2017-2020")
+colnames(summary.l) <- c("Group", "Lambda", "Lamba.Lower", "Lambda.Upper", "Years")
+
+summary.l <- summary.l%>%
+  mutate(`95% CI`=paste(Lamba.Lower,Lambda.Upper, sep="-"))%>%
+  dplyr::select(Group, Years, Lambda,`95% CI`)
+
+gt(summary.l)%>%
+    tab_header(
+    title = md("Population Growth Rates")
+  ) 
+```
+  
+##Summarize effect of treatments
+```{r effects, results='asis'}
+
+summary.effect <- tribble(
+  ~pop,~lambda.dif, ~lower, ~upper,
+"pre vs post",out_rnd_eff$mean$diff_geom_mean_lambda_post_to_pre, out_rnd_eff$q2.5$diff_geom_mean_lambda_post_to_pre,out_rnd_eff$q97.5$diff_geom_mean_lambda_post_to_pre,
+"pre vs post_iwolf",out_rnd_eff$mean$diff_geom_mean_lambda_post_to_pre_iwolf, out_rnd_eff$q2.5$diff_geom_mean_lambda_post_to_pre_iwolf,out_rnd_eff$q97.5$diff_geom_mean_lambda_post_to_pre_iwolf)%>%
+    mutate_if(is.numeric,function(x) round(x,2))
+
+
+
+gt(summary.effect)%>%
+  tab_header(
+    title = md("Treatment Effect")
+  ) 
+
+S <- ggs(out_rnd_eff$samples)%>%
+  filter(Parameter%in%c("diff_geom_mean_lambda_post_to_pre","diff_geom_mean_lambda_post_to_pre_iwolf"))%>%
+  mutate(Parameter=case_when(Parameter%in%"diff_geom_mean_lambda_post_to_pre"~"All Wolf Control (2016-2020)",
+                             Parameter%in%"diff_geom_mean_lambda_post_to_pre_iwolf"~"Intense Wolf Control (2017-2020)"
+                             ))
+
+ggplot(S, aes(x = value,fill=Parameter)) +
+  geom_density(alpha=0.5) +
+  theme_ipsum()+
+  theme_ipsum()+
+  labs(x="Change in Population Growth", y="Posterior Sample Density", title="Treatment Effects on Population Growth")+
+    geom_vline(xintercept = 0)
+```
+
+ 

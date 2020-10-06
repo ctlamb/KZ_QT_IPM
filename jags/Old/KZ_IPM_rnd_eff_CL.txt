@@ -1,0 +1,430 @@
+model{
+	
+	#  Data are all lower case
+	# c = control pop unit
+	# p = pen pop unit
+	# sa = sub-adult
+	# a  = adult
+	# sac = sub-adult control
+	# sap = sub-adult pen
+	# ac = adult control
+	# ap = adult pen
+
+	##########################################################################
+	#  Priors
+
+	#  In data, meanr and means structured as: nrow = 3, ncol = 2, narray = 2
+	#   row = age and col 1 = control and col 2 = pen, array 1 = mu, array 2 = tau
+	
+	#  Recruitment
+	cR_mu ~ dnorm(log(meanr[3,1,1]/(1 - meanr[3,1,1])), meanr[3,1,2])T(-10,10)
+	# meanr[age, pop, mean:tau]
+	# R[yr,pop]
+	
+	#  Survival 
+	#   Survival of first age class (calves) included in recruitment parameter 
+	sacS_mu ~ dnorm(log(means[2,1,1]/(1 - means[2,1,1])), means[2,1,2])T(-10,10)
+	sapS_mu ~ dnorm(log(means[2,2,1]/(1 - means[2,2,1])), means[2,2,2])T(-10,10)
+	acS_mu ~ dnorm(log(means[3,1,1]/(1 - means[3,1,1])), means[3,1,2])T(-10,10)
+	apS_mu ~ dnorm(log(means[3,2,1]/(1 - means[3,2,1])), means[3,2,2])T(-10,10)
+	# means[age, pop, mean:tau]
+	# S[yr, age, pop]
+
+	#  Transform probability back to real scale and use as the intercept
+	# Year, Age, Pop unit
+	tausa <- sdsa
+	sdsa ~ dunif(0, 3)
+	taua <- sda
+	sda ~ dunif(0, 3)
+	taur <- 1/(sdr^2)
+	sdr ~ dunif(0, 50)
+	
+	for(yr in 1:18){
+		ssa_yr[yr] ~ dnorm(0, tausa)T(-10, 10)
+		logit(S[yr,2,1]) <- sacS_mu + ssa_yr[yr]
+		S[yr,2,2] <-0
+		
+		sa_yr[yr] ~ dnorm(0, taua)T(-10, 10)
+		logit(S[yr,3,1]) <- acS_mu + sa_yr[yr]
+		S[yr,3,2] <- 0
+		
+		r_yr[yr] ~ dnorm(0, taua)T(-5, 5)
+		logit(R[yr,1]) <- cR_mu + r_yr[yr]
+		}
+	
+	for(yr in 19:nyr){
+		ssa_yr[yr] ~ dnorm(0, tausa)T(-10, 10)
+		logit(S[yr,2,1]) <- sacS_mu+ ssa_yr[yr]
+		
+		sa_yr[yr] ~ dnorm(0, taua)T(-10, 10)
+		logit(S[yr,3,1]) <- acS_mu + sa_yr[yr]
+		
+		r_yr[yr] ~ dnorm(0, taur)T(-5, 5)
+		logit(R[yr,1]) <- cR_mu + r_yr[yr]
+		}
+
+		S[19,2,2] <- 0.8
+		S[19,3,2] <- 0.8
+		
+		S[20,2,2] <- 1
+		S[20,3,2] <- 1
+		
+		S[21,2,2] <- 1
+		S[21,3,2] <- 1
+		
+		S[22,2,2] <- 0.89
+		S[22,3,2] <- 0.89
+		
+		S[23,2,2] <- 0.86
+		S[23,3,2] <- 0.86
+		
+		S[24,2,2] <- 0.94
+		S[24,3,2] <- 0.94
+		
+		S[25,2,2] <- 1
+		S[25,3,2] <- 0.92
+		
+		mean_r3_C[1] <- 1
+		mean_r3_P[1] <- 1
+
+	##########################################################################
+	#  Process model - 3 ages, 2 pop
+	#  Using normal approximation because it is fast and mixes well
+	#  Pop = 1 is Control, Pop = 2 is Pen
+
+	
+	# First year population size
+	#  In data, n1 should be arranged as: nrow = 3, ncol = 2
+	#   row = age and col 1 = control and col 2 = pen
+	# N[yr, age, pop]
+	
+	N[1,1,1] ~ dnorm(n1[1], 1/(20 * n1[1]))T(0,)
+	N[1,2,1] ~ dnorm(n1[2], 1/(20 * n1[2]))T(0,)
+	N[1,3,1] ~ dnorm(n1[3], 1/(20 * n1[3]))T(0,)
+	
+	N[1,1,2] <- 0
+	N[1,2,2] <- 0
+	N[1,3,2] <- 0
+
+	totCalvesC[1] <- N[1,1,1] 
+	totCalvesP[1] <- 0 
+	totCalves[1] <- totCalvesC[1] + totCalvesP[1]
+	totAdultsC[1] <- N[1,2,1] + N[1,3,1]
+	totAdultsP[1] <- 0
+	totAdults[1] <- totAdultsC[1] + totAdultsP[1]
+	totC[1] <- N[1,1,1] + N[1,2,1] + N[1,3,1]
+	totP[1] <- 0
+	totN[1] <- totC[1] + totP[1]
+
+	#  Apply sex ratio to get full population size
+	totAdultsMF[1] <- totAdults[1]/adult_sex_ratio[1]
+	totCalvesMF[1] <- totCalves[1]/0.5
+	totNMF[1] <- totAdultsMF[1] + totCalvesMF[1] 
+	
+	
+	for(yr in 2:nyr){
+		
+		#  Population size of eachage class in pop 2
+		N[yr,2,2] <- nPenInSaF[yr]
+		N[yr,3,2] <- nPenInF[yr]-(nPenInSaF[yr])
+
+		#  Calves - Normal approximation of Poisson
+		##the total # of F minus the F that were in the pen the previous year and survived (i.e., to get at the # that were available outside to calve)
+		nMu[yr,1,1] <- (totAdults[yr] - ((N[yr-1,2,2]+N[yr-1,3,2])*S[yr-1,3,2])) * R[yr,1] 
+		N[yr,1,1] ~ dnorm(nMu[yr,1,1], 1/abs(nMu[yr,1,1]))
+		N[yr,1,2] <- nPenC[yr] 
+		
+		#  SubAdults - Normal approximation of Binomial
+		nMu[yr,2,1] <- (N[yr-1,1,1] * S[yr-1,2,1]) + (N[yr-1,1,2] * S[yr-1,2,2]) - N[yr,2,2]
+		nTau[yr,2,1] <-1/abs((N[yr-1,1,1] + 1) * S[yr-1,2,1] * (1 - S[yr-1,2,1]))
+		N[yr,2,1] ~ dnorm(nMu[yr,2,1], nTau[yr,2,1])T(0,)
+	
+
+		#  Adults - Normal approximation of Binomial
+		nMu[yr,3,1] <- ((N[yr-1,2,1] + N[yr-1,3,1]) * S[yr-1,3,1])  + ((N[yr-1,2,2] + N[yr-1,3,2]) * S[yr-1,3,2]) - N[yr,3,2] 
+		nTau[yr,3,1] <- 1/abs(((N[yr-1,2,1] + N[yr-1,3,1]) * S[yr-1,3,1] * (1 - S[yr-1,3,1])) + (N[yr-1,3,2] + N[yr-1,2,2]) * S[yr-1,3,2] * (1 - S[yr-1,3,2]))
+		N[yr,3,1] ~ dnorm(nMu[yr,3,1], nTau[yr,3,1])T(0,)
+
+		#  Totals in each year - females only
+		totCalvesC[yr] <- N[yr,1,1] 
+		totCalvesP[yr] <- N[yr,1,2] 
+		totCalves[yr] <- totCalvesC[yr] + totCalvesP[yr]
+		totAdultsC[yr] <- N[yr,2,1] + N[yr,3,1]
+		totAdultsP[yr] <- N[yr,2,2] + N[yr,3,2]
+		totAdults[yr] <- totAdultsC[yr] + totAdultsP[yr]
+		totC[yr] <- totCalvesC[yr] + totAdultsC[yr]
+		totP[yr] <- totCalvesP[yr] + totAdultsP[yr]
+		totN[yr] <- totC[yr] + totP[yr]
+		
+		#  Apply sex ratio to get full population size
+		totAdultsMF[yr] <- totAdults[yr]/adult_sex_ratio[yr]
+		totCalvesMF[yr] <- totCalves[yr]/0.5
+		totNMF[yr] <- totAdultsMF[yr] + totCalvesMF[yr]
+		
+		# Alt calf recruit (by ad F)
+	mean_r3_C[yr] <- (N[yr,1,1]+0.001)/((N[yr-1,3,1]+0.001)*S[yr-1,3,1])
+	}
+		
+			for(yr in 20:nyr){
+	mean_r3_P[yr] <- (N[yr,1,2]+0.001)/((N[yr-1,3,2]+0.001)*S[yr-1,3,2])
+}
+	##########################################################################
+	#  Observation Models
+	#  Indexing/columns of data inputs:
+	#    1   2     3    4    5    6
+	#  DAU, Year, Age, Pop, Mean, Tau
+	#  Note: we are keeping the indexing even though DAU doesn't apply
+
+	#  Potential model for minimum counts
+	r ~ dunif(0, 1000)
+	for(i in 1:nmin){
+		mu[i] <- r/(r + totN[mindat[i,2]])
+		mindat[i,5] ~ dnegbin(mu[i], r)
+		#totN[yr]
+		}
+
+	#  Survival Observations 
+	for(i in 1:ns){
+		sdat[i,5] ~ dnorm(S[sdat[i,2], sdat[i,3], sdat[i,4]], sdat[i,6])T(0,1)
+		#S[yr, age, pop]
+		}
+
+	#  Recruitment Observations
+	for(i in 1:nr){
+		rdat[i,5] ~ dnorm(R[rdat[i,2], rdat[i,4]], rdat[i,6])
+		#R[yr,pop]
+	   }
+		
+	#  Derived - the constant is added to avoid division by 0
+	lambda[1] <- 0.99
+	lambdaSimP[1] <-0.99
+	lambdaSimC[1] <-0.99
+	lambdaSimC2[1] <-0.99
+	
+	for(yr in 2:nyr){
+		lambda[yr] <- (totN[yr] + 0.001)/abs(totN[yr-1] + 0.001)
+		logla[yr] <- log(ifelse(lambda[yr] < 0.0001, 0.01, lambda[yr]))
+		lambdaC[yr] <- (totC[yr] + 0.001)/abs(totC[yr-1] + 0.001)
+		}
+		
+  for(yr in 2:nsimyr){
+		lambdaSimP[yr] <- (simTotP[yr] + 0.001)/abs(simTotP[yr-1] + 0.001)
+		lambdaSimC[yr] <- (simTotC[yr] + 0.001)/abs(simTotC[yr-1] + 0.001)
+	}
+	
+	  for(yr in 2:length(sim_yrs2)){
+		lambdaSimC2[yr] <- (simTotC2[yr] + 0.001)/abs(simTotC2[yr-1] + 0.001)
+	}
+	
+	
+	geom_mean_lambda <- (exp(1)^sum(logla[2:nyr]))^(1/(nyr-1))
+	
+	#  Summarize Lambda
+	# Pre-Post
+	geom_mean_lambda_prepen <- prod(lambda[2:18])^(1/length(lambda[2:18]))
+  geom_mean_lambda_postpen <- prod(lambda[20:25])^(1/length(lambda[20:25]))
+  geom_mean_lambda_postwolf <- prod(lambda[19:25])^(1/length(lambda[19:25]))
+  diff_geom_mean_lambda_post_to_pre <- geom_mean_lambda_postpen - geom_mean_lambda_prepen
+  diff_geom_mean_lambda_post_to_pre_iwolf <- geom_mean_lambda_postpen_iWolf - geom_mean_lambda_prepen
+  
+  #  Treatment Simulations
+  geom_mean_lambda_SimPen <- prod(lambdaSimP[2:7])^(1/length(lambdaSimP[2:7]))
+  tmp1_SimC <- prod(lambdaSimC[2:7])
+  tmp2_SimC <- 1/length(lambdaSimC[2:7])
+  geom_mean_lambda_SimC <- tmp1_SimC^tmp2_SimC
+
+  
+  tmp1_SimC2 <- prod(lambdaSimC2[2:8])
+  tmp2_SimC2 <- 1/length(lambdaSimC2[2:8])
+  geom_mean_lambda_SimC2 <- tmp1_SimC2^tmp2_SimC2
+  
+  # wolf intensity
+  geom_mean_lambda_postpen_iWolf <- prod(lambda[22:25])^(1/length(lambda[22:25]))
+  geom_mean_lambda_SimPen_iWolf <- prod(lambdaSimP[4:7])^(1/length(lambdaSimP[4:7]))
+   tmp1_SimC2_iWolf <- prod(lambdaSimC[4:7])
+  tmp2_SimC2_iWolf <- 1/length(lambdaSimC[4:7])
+  geom_mean_lambda_SimC_iWolf <- tmp1_SimC2_iWolf^tmp2_SimC2_iWolf
+  
+  #  Summarize Vital Rates
+  mean_surv_pre <- prod(S[1:17,3,1])^(1/length(S[1:17,3,1]))
+	mean_surv_pen <- prod(S[19:24,3,2])^(1/length(S[19:24,3,2]))
+	mean_surv_wolf <- prod(S[18:24,3,1])^(1/length(S[18:24,3,1]))
+	
+  mean_r_pre <- prod(R[2:18,1])^(1/length(R[2:18,1]))
+	mean_r_pen <- prod(R[20:25,2])^(1/length(R[20:25,2]))
+	mean_r_wolf <- prod(R[19:25,1])^(1/length(R[19:25,1]))
+	
+	
+	##why don't these work??
+	tmp1_r3_pre <- prod(mean_r3_C[2:18])
+	tmp2_r3_pre <- 1/length(mean_r3_C[2:18])
+	#mean_r3_pre <- tmp1_r3_pre^tmp2_r3_pre 
+	
+	tmp1_r3_pen <- prod(mean_r3_P[20:25])
+	tmp2_r3_pen <- 1/length(mean_r3_P[20:25])
+	mean_r3_pen <- tmp1_r3_pen^tmp2_r3_pen
+	
+	tmp1_r3_wolf <- prod(mean_r3_C[19:25])
+	tmp2_r3_wolf <- 1/length(mean_r3_C[19:25])
+	#mean_r3_wolf <- tmp1_r3_wolf^tmp2_r3_wolf
+	
+
+  #  Additional for sim
+  mean_surv_presa1 <- prod(S[1:17,2,1])^(1/length(S[1:17,2,1]))
+  mean_surv_presa2 <- prod(S[1:17,3,1])^(1/length(S[1:17,3,1]))
+  
+  ##pen vs wolf control effects
+	wolf_eff_proportion <- (geom_mean_lambda_SimC2-geom_mean_lambda_prepen)/diff_geom_mean_lambda_post_to_pre
+	pen_eff_proportion <- (diff_geom_mean_lambda_post_to_pre-(geom_mean_lambda_SimC2-geom_mean_lambda_prepen))/diff_geom_mean_lambda_post_to_pre
+	
+	#################################################################################
+	#  Simulation
+	
+	#  R for penned population for simulation
+	for(yr in 1:19){
+		R[yr,2] <- 0
+		}
+	for(yr in 20:nyr){
+		R[yr,2] <- N[yr,1,2] /(((N[yr-1,2,2] + N[yr-1,3,2]) * S[yr-1,3,2]))
+		R.sim[yr,2] <- N[yr,1,2] /(N[yr-1,3,2]*S[yr-1,3,2])
+		}
+		
+	for(yr in 19:nyr){
+		R.sim[yr,1] <- N[yr,1,1] /(N[yr-1,3,1]*S[yr-1,3,1])
+		}
+		
+	####HARD CODE IN FOR NOW, CAN'T GET ABOVE TO WORK
+		#R.sim[19,1] <- 0.1560766 
+		#R.sim[20,1] <- 0.2295352 
+		#R.sim[21,1] <- 0.2449682 
+		#R.sim[22,1] <- 0.3120587 
+		#R.sim[23,1] <- 0.1980880 
+		#R.sim[24,1] <- 0.2413508 
+		#R.sim[25,1] <- 0.2425177
+		
+		
+	# Population for year 1 of simulation (year 1 of sim = 2013)
+	simN[1,1,1] <- N[sim_yrs[1],1,1]
+	simN[1,1,2] <- N[sim_yrs[1],1,1]
+	simN[1,1,3] <- N[sim_yrs[1],1,1]
+	simN[1,2,1] <- N[sim_yrs[1],2,1]
+	simN[1,2,2] <- N[sim_yrs[1],2,1]
+	simN[1,2,3] <- N[sim_yrs[1],2,1]
+	simN[1,3,1] <- N[sim_yrs[1],3,1]
+	simN[1,3,2] <- N[sim_yrs[1],3,1]
+	simN[1,3,3] <- N[sim_yrs[1],3,1]
+
+
+	
+	#  Totals in each year - females only
+	simCalvesC[1] <- simN[1,1,1] 
+	simCalvesP[1] <- simN[1,1,2] 
+	simCalvesBAU[1] <- simN[1,1,3] 
+	simAdultsC[1] <- simN[1,2,1] + simN[1,3,1]
+	simAdultsP[1] <- simN[1,2,2] + simN[1,3,2]
+	simAdultsBAU[1] <- simN[1,2,3] + simN[1,3,3]
+	simTotC[1] <- simAdultsC[1] + simCalvesC[1]
+	simTotP[1] <- simAdultsP[1] + simCalvesP[1]
+	simTotBAU[1] <- simAdultsBAU[1] + simCalvesBAU[1]
+	
+	#  Apply sex ratio to get full population size
+	simAdultsCMF[1] <- simAdultsC[1]/adult_sex_ratio[1]
+	simAdultsPMF[1] <- simAdultsP[1]/adult_sex_ratio[1]
+	simAdultsBAUMF[1] <- simAdultsBAU[1]/adult_sex_ratio[1]
+	simCalvesCMF[1] <- simCalvesC[1]/0.5
+	simCalvesPMF[1] <- simCalvesP[1]/0.5
+	simCalvesBAUMF[1] <- simCalvesBAU[1]/0.5
+	simTotCMF[1] <- simAdultsCMF[1] + simCalvesCMF[1]
+	simTotPMF[1] <- simAdultsPMF[1] + simCalvesPMF[1]
+	simTotBAUMF[1] <- simAdultsBAUMF[1] + simCalvesBAUMF[1]
+	
+	for(sim_yr in 2:nsimyr){
+
+		#  Calves
+		simN[sim_yr,1,1] <- (simN[sim_yr-1,3,1]*S[sim_yrs[sim_yr-1],3,1]) * R.sim[sim_yrs[sim_yr],1] 
+		simN[sim_yr,1,2] <- (simN[sim_yr-1,3,2]*S[sim_yrs[sim_yr-1],3,2]) * R.sim[sim_yrs[sim_yr],2] 
+		simN[sim_yr,1,3] <- simAdultsBAU[sim_yr] *   ilogit(r_yr[sim_yrs[sim_yr]] + logit(mean_r_pre))
+		
+		#  SubAdults
+		simN[sim_yr,2,1] <- simN[sim_yr-1,1,1] * S[sim_yrs[sim_yr-1],2,1]
+		simN[sim_yr,2,2] <- simN[sim_yr-1,1,2] * S[sim_yrs[sim_yr-1],2,2]
+		simN[sim_yr,2,3] <- simN[sim_yr-1,1,3] * ilogit(sa_yr[sim_yrs[sim_yr-1]] + logit(mean_surv_presa1))
+
+		#  Adults - Normal approximation of Binomial
+		simN[sim_yr,3,1] <- (simN[sim_yr-1,2,1] + simN[sim_yr-1,3,1]) * S[sim_yrs[sim_yr-1],3,1]  
+		simN[sim_yr,3,2] <- (simN[sim_yr-1,2,2] + simN[sim_yr-1,3,2]) * S[sim_yrs[sim_yr-1],3,2]
+		simN[sim_yr,3,3] <- (simN[sim_yr-1,2,3] + simN[sim_yr-1,3,3]) * ilogit(ssa_yr[sim_yrs[sim_yr-1]] + logit(mean_surv_pre))
+		
+		#  Totals in each year - females only
+		simCalvesC[sim_yr] <- simN[sim_yr,1,1] 
+		simCalvesP[sim_yr] <- simN[sim_yr,1,2]
+		simCalvesBAU[sim_yr] <- simN[sim_yr,1,3] 
+		simAdultsC[sim_yr] <- simN[sim_yr,2,1] + simN[sim_yr,3,1]
+		simAdultsP[sim_yr] <- simN[sim_yr,2,2] + simN[sim_yr,3,2]
+		simAdultsBAU[sim_yr] <- simN[sim_yr,2,3] + simN[sim_yr,3,3]
+		simTotC[sim_yr] <- simAdultsC[sim_yr] + simCalvesC[sim_yr]
+  	simTotP[sim_yr] <- simAdultsP[sim_yr] + simCalvesP[sim_yr]
+  	simTotBAU[sim_yr] <- simAdultsBAU[sim_yr] + simCalvesBAU[sim_yr]
+		
+		#  Apply sex ratio to get full population size
+		simAdultsCMF[sim_yr] <- simAdultsC[sim_yr]/adult_sex_ratio[sim_yr]
+		simAdultsPMF[sim_yr] <- simAdultsP[sim_yr]/adult_sex_ratio[sim_yr]
+		simAdultsBAUMF[sim_yr] <- simAdultsBAU[sim_yr]/adult_sex_ratio[sim_yr]
+		simCalvesCMF[sim_yr] <- simCalvesC[sim_yr]/0.5
+		simCalvesPMF[sim_yr] <- simCalvesP[sim_yr]/0.5
+		simCalvesBAUMF[sim_yr] <- simCalvesBAU[sim_yr]/0.5
+		simTotCMF[sim_yr] <- simAdultsCMF[sim_yr] + simCalvesCMF[sim_yr]
+		simTotPMF[sim_yr] <- simAdultsPMF[sim_yr] + simCalvesPMF[sim_yr]
+		simTotBAUMF[sim_yr] <- simAdultsBAUMF[sim_yr] + simCalvesBAUMF[sim_yr]
+		}
+		
+
+
+
+##Second sim for extra year of wolf control
+
+# Population for year 1 of simulation (year 1 of sim = 2013)
+	simN2[1,1,1] <- N[sim_yrs[1],1,1]
+	simN2[1,1,3] <- N[sim_yrs[1],1,1]
+	simN2[1,2,1] <- N[sim_yrs[1],2,1]
+	simN2[1,2,3] <- N[sim_yrs[1],2,1]
+	simN2[1,3,1] <- N[sim_yrs[1],3,1]
+	simN2[1,3,3] <- N[sim_yrs[1],3,1]
+
+
+	
+	#  Totals in each year - females only
+	simCalvesC2[1] <- simN2[1,1,1] 
+	simCalvesBAU2[1] <- simN2[1,1,3] 
+	simAdultsC2[1] <- simN2[1,2,1] + simN2[1,3,1]
+	simAdultsBAU2[1] <- simN2[1,2,3] + simN2[1,3,3]
+	simTotC2[1] <- simAdultsC2[1] + simCalvesC2[1]
+	simTotBAU2[1] <- simAdultsBAU2[1] + simCalvesBAU2[1]
+	
+	
+		for(sim_yr in 2:length(sim_yrs2)){
+
+		#  Calves
+		simN2[sim_yr,1,1] <- (simN2[sim_yr-1,3,1]*S[sim_yrs2[sim_yr-1],3,1]) * R.sim[sim_yrs2[sim_yr],1] 
+		simN2[sim_yr,1,3] <- simAdultsBAU2[sim_yr] *   ilogit(r_yr[sim_yrs2[sim_yr]] + logit(mean_r_pre))
+		
+		#  SubAdults
+		simN2[sim_yr,2,1] <- simN2[sim_yr-1,1,1] * S[sim_yrs2[sim_yr-1],2,1]
+		simN2[sim_yr,2,3] <- simN2[sim_yr-1,1,3] * ilogit(sa_yr[sim_yrs2[sim_yr-1]] + logit(mean_surv_presa1))
+
+		#  Adults - Normal approximation of Binomial
+		simN2[sim_yr,3,1] <- (simN2[sim_yr-1,2,1] + simN2[sim_yr-1,3,1]) * S[sim_yrs2[sim_yr-1],3,1]  
+		simN2[sim_yr,3,3] <- (simN2[sim_yr-1,2,3] + simN2[sim_yr-1,3,3]) * ilogit(ssa_yr[sim_yrs2[sim_yr-1]] + logit(mean_surv_pre))
+		
+		#  Totals in each year - females only
+		simCalvesC2[sim_yr] <- simN2[sim_yr,1,1] 
+		simCalvesBAU2[sim_yr] <- simN2[sim_yr,1,3] 
+		simAdultsC2[sim_yr] <- simN2[sim_yr,2,1] + simN2[sim_yr,3,1]
+		simAdultsBAU2[sim_yr] <- simN2[sim_yr,2,3] + simN2[sim_yr,3,3]
+		simTotC2[sim_yr] <- simAdultsC2[sim_yr] + simCalvesC2[sim_yr]
+  	simTotBAU2[sim_yr] <- simAdultsBAU2[sim_yr] + simCalvesBAU2[sim_yr]
+		}
+	
+	}
+	
+	

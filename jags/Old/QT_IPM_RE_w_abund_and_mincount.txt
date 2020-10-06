@@ -1,0 +1,163 @@
+model{
+	
+	#  Data are all lower case
+	# sa = sub-adult
+	# a  = adult
+
+
+	##########################################################################
+	#  Priors
+
+	#  Recruitment
+	cR_mu ~ dnorm(log(meanr[1,1,1]/(1 - meanr[1,1,1])), meanr[1,1,2])T(-10,10)
+	# meanr[age, pop, mean:tau]
+	# R[yr]
+	
+	#  Survival 
+	#   Survival of first age class (calves) included in recruitment parameter 
+	#   Survival of subadults same as adults
+	aS_mu ~ dnorm(log(means[1,1,1]/(1 - means[1,1,1])), means[1,1,2])T(-10,10)
+	# means[age, pop, mean:tau]
+	# S[yr]
+
+	#  Transform probability back to real scale and use as the intercept
+	# Year, Age, Pop unit
+	taua <- 1/(sda^2)
+	sda ~ dunif(0, 50)
+	taur <- 1/(sdr^2)
+	sdr ~ dunif(0, 50)
+	
+	for(yr in 1:nyr){
+		sa_yr[yr] ~ dnorm(0, taua)T(-5, 5)
+		logit(S[yr]) <- aS_mu + sa_yr[yr]
+		
+		r_yr[yr] ~ dnorm(0, taua)T(-5, 5)
+		logit(R[yr]) <- cR_mu + r_yr[yr]
+		}
+
+
+	##########################################################################
+	#  Process model - 3 ages, 1 pop
+	#  Using normal approximation because it is fast and mixes well
+
+	
+	# First year population size
+	#  In data, n1 should be arranged as: nrow = 3, ncol = 2
+	#   row = age and col 1 = control and col 2 = pen
+	# N[yr, age, pop]
+	
+	N[1,1,1] ~ dnorm(n1[1], 0.0001)T(0,)
+	N[1,2,1] ~ dnorm(n1[2], 0.0001)T(0,)
+	N[1,3,1] ~ dnorm(n1[3], 0.0001)T(0,)
+
+	totCalves[1] <- N[1,1,1] 
+	totAdults[1] <- N[1,2,1] + N[1,3,1]
+
+	totN[1] <- N[1,1,1] + N[1,2,1] + N[1,3,1]
+
+	#  Apply sex ratio to get full population size
+	totAdultsMF[1] <- totAdults[1]/adult_sex_ratio[1]
+	totCalvesMF[1] <- totCalves[1]/0.5
+	totNMF[1] <- totAdultsMF[1] + totCalvesMF[1] 
+	
+	
+	for(yr in 2:nyr){
+
+		#  Calves - Normal approximation of Poisson
+		nMu[yr,1,1] <- totAdults[yr] * R[yr] 
+		N[yr,1,1] ~ dnorm(nMu[yr,1,1], 1/abs(nMu[yr,1,1]))
+		
+		#  SubAdults - Normal approximation of Binomial
+		nMu[yr,2,1] <- (N[yr-1,1,1] * S[yr-1])
+		nTau[yr,2,1] <-1/abs((N[yr-1,1,1] + 1) * S[yr-1] * (1 - S[yr-1]))
+		N[yr,2,1] ~ dnorm(nMu[yr,2,1], nTau[yr,2,1])T(0,)
+		
+		#  Adults - Normal approximation of Binomial
+		nMu[yr,3,1] <- ((N[yr-1,3,1] + N[yr-1,2,1]) * S[yr-1])
+		nTau[yr,3,1] <- 1/abs(((N[yr-1,3,1] + N[yr-1,2,1]) * S[yr-1] * (1 - S[yr-1])))
+		N[yr,3,1] ~ dnorm(nMu[yr,3,1], nTau[yr,3,1])T(0,)
+
+		#  Totals in each year - females only
+		totCalves[yr] <- N[yr,1,1] 
+		totAdults[yr] <- N[yr,2,1] + N[yr,3,1]
+		totN[yr] <- totCalves[yr] + totAdults[yr]
+		
+		#  Apply sex ratio to get full population size
+		totAdultsMF[yr] <- totAdults[yr]/adult_sex_ratio[yr]
+		totCalvesMF[yr] <- totCalves[yr]/0.5
+		totNMF[yr] <- totAdultsMF[yr] + totCalvesMF[yr] 
+		
+		}
+		
+
+	##########################################################################
+	#  Observation Models
+	#  Indexing/columns of data inputs:
+	#    1   2     3    4    5    6
+	#  DAU, Year, Age, Pop, Mean, Tau
+	#  Note: we are keeping the indexing even though DAU doesn't apply
+
+	#  Abundance model
+	for(i in 1:na){
+		abundat[i,5] ~ dnorm(totAdultsMF[abundat[i,2]], abundat[i,6])T(0,)
+		#totAdultsMF[yr]: total number of males and females age class 2 and 3
+		}
+	
+	#  Minimum count model	
+	r1 ~ dunif(1, 50) 
+	for(i in 1:nmin){
+		mu1[i] <- r1/(r1 + totAdultsMF[mindat[i,2]])
+		mindat[i,5] ~ dnegbin(mu1[i], r1)
+		}
+
+	# Calf abundance model
+	for(i in 1:na){
+		calf_abundat[i,5] ~ dnorm(totCalvesMF[calf_abundat[i,2]], calf_abundat[i,6])T(0,)
+		}
+	
+	### r2 does not converge well ###
+	##  Calf minimum count model	
+	#r2 ~ dunif(1, 50)
+	#for(i in 1:nmin){
+		#mu2[i] <- r2/(r2 + totCalvesMF[calf_mindat[i,2]])
+		#calf_mindat[i,5] ~ dnegbin(mu2[i], r2)
+		#}
+		
+	#  Survival Observations 
+	for(i in 1:ns){
+		sdat[i,5] ~ dnorm(S[sdat[i,2]], sdat[i,6])T(0,1)
+		#S[yr]
+		}
+
+	#  Recruitment Observations
+	for(i in 1:nr){
+		rdat[i,5] ~ dnorm(R[rdat[i,2]], rdat[i,6])T(0,1)
+		#R[yr]
+	   }
+		
+	#  Derived - the constant is added to avoid division by 0
+	lambda[1] <- 1
+	
+	for(yr in 2:nyr){
+		lambda[yr] <- (totN[yr] + 0.001)/abs(totN[yr-1] + 0.001)
+		logla[yr] <- log(ifelse(lambda[yr] < 0.0001, 0.01, lambda[yr]))
+		}
+	
+	#  Summarize Lambda
+	##PRE-POST
+	#geom_mean_lambda_pre <- prod(lambda[2:15])^(1/length(lambda[2:15]))
+	#geom_mean_lambda_post<- prod(lambda[16:20])^(1/length(lambda[16:20]))
+	#geom_mean_lambda_post_iwolf <- prod(lambda[17:20])^(1/length(lambda[17:20]))
+	#diff_geom_mean_lambda_post_to_pre <- geom_mean_lambda_post - geom_mean_lambda_pre
+	#diff_geom_mean_lambda_post_to_pre_iwolf <- geom_mean_lambda_post_iwolf - geom_mean_lambda_pre
+
+	#  Summarize Vital Rates
+	#mean_surv_pre <- prod(S[1:15,3,1])^(1/length(S[1:15,3,1]))
+	#mean_surv_post <- prod(S[16:19,3,1])^(1/length(S[16:19,3,1]))
+
+	#mean_r_pre <- prod(R[2:16,1])^(1/length(R[2:16,1]))
+	#mean_r_post <- prod(R[17:20,1])^(1/length(R[17:20,1]))
+	
+	}
+	
+	
