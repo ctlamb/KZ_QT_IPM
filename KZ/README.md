@@ -1,10 +1,9 @@
 Klinse-Za Caribou IPM
 ================
 Sara Williams, Hans Martin, and Clayton Lamb
-04 October, 2020
+06 October, 2020
 
-Load Data
----------
+\#\#Load Data
 
 ``` r
 library(ggmcmc)
@@ -13,11 +12,12 @@ library(knitr)
 library(gt)
 library(ggallin)
 library(hrbrthemes)
-library(tidyverse)
 library(RColorBrewer)
 library(MCMCvis)
 library(readxl)
+library(piggyback)
 library(here)
+library(tidyverse)
 
 ##define fn
 gm_mean = function(a){prod(a)^(1/length(a))}
@@ -42,11 +42,9 @@ calf_female_pencount_recruit <-  read.csv(here::here("data", "KZ", "calf_female_
 sightability <- read.csv(here::here("data", "KZ", "sightability_KZ.csv"))
 ```
 
-Prep sightability bootstrap
----------------------------
+\#\#Prep sightability bootstrap
 
-Prep for IPM
-------------
+\#\#Prep for IPM
 
 ``` r
 #  Years of study
@@ -182,8 +180,7 @@ calf_abundat <- count_dat %>%
 nac <- nrow(calf_abundat)
 ```
 
-Run model in JAGS
------------------
+## Run model in JAGS
 
 ``` r
 # MCMC params
@@ -228,11 +225,10 @@ ipm_inits <- function(){
         list(N = Nst)}
     
 #  Model parameters to monitor
-model_parms <- c("lambda","logla", "lambdaC", 
+model_parms <- c("lambda","lambdaC", 
     "totN", "totC", "totP", 
     "N", "S", "R", 
     "wolfpen_eff_r", "wolfpen_eff_s",
-    "sa_yr", "ssa_yr", "r_yr", 
     "totCalves", "totCalvesC", "totCalvesP",
     "totAdults", "totAdultsC", "totAdultsP",
     "totAdultsMF", "totCalvesMF", "totNMF",
@@ -243,22 +239,13 @@ model_parms <- c("lambda","logla", "lambdaC",
     "geom_mean_lambda_postpen_iWolf", "geom_mean_lambda_SimPen_iWolf", "geom_mean_lambda_SimC_iWolf",
     "simN", "simTotC", "simTotP", "simTotBAU", "simTotCMF", "simTotPMF", "simTotBAUMF",
     "mean_surv_pre","mean_surv_pen","mean_surv_wolf",
-    "mean_surv_presa1", "mean_surv_presa2",
     "mean_r_pre","mean_r_pen","mean_r_wolf",
-    "mean_r3_pre","mean_r3_pen","mean_r3_wolf",
-    "mean_r3_C", "mean_r3_P",
     "wolf_eff_proportion","pen_eff_proportion",
     "R.sim", "lambdaSimC", "lambdaSimC2","lambdaSimP",
-    "wolf_eff","pen_eff", "wolf_eff_iwolf","pen_eff_iwolf",
-    "tmp1_SimC","tmp2_SimC")
+    "wolf_eff","pen_eff", "wolf_eff_iwolf","pen_eff_iwolf")
 
-
-
-
-    
 
 #  Run model with survival and recruitment varying per year
-#  Adjust n.cores for your computer
 out_rnd_eff <- jagsUI::jags(ipm_dat, 
     inits = ipm_inits,
     model_parms,
@@ -269,14 +256,20 @@ out_rnd_eff <- jagsUI::jags(ipm_dat,
     n.thin = nt,
     n.adapt = nad)
 
-save(out_rnd_eff, file = here::here("KZ", "out_rnd_eff.Rdata"))
+
+###save output, using piggyback because too large for github, then delete file so it doensn't upload
+Sys.setenv(GITHUB_TOKEN="733161279ee86c587f350521cf9fd11d8450e969")
+save(out_rnd_eff, file = here::here("KZ", "kz_out_rnd_eff.Rdata"))
+pb_upload(here::here("KZ", "kz_out_rnd_eff.Rdata"), 
+          repo = "ctlamb/KZ_QT_IPM", 
+          tag = "v0.0.1",
+          overwrite=TRUE)
+unlink(here::here("KZ", "kz_out_rnd_eff.Rdata"))
 ```
 
-MODEL DIAGNOSTICS
------------------
+\#\#MODEL DIAGNOSTICS
 
-ABUNDANCE
----------
+\#\#ABUNDANCE
 
 ``` r
 res_df <- data.frame(rbind(yr_df,yr_df),
@@ -301,7 +294,7 @@ ggplot(res_df,aes(x = yrs, y = est, ymin=q2.5, ymax=q97.5, fill=param)) +
   labs(x="Year",title="Population Growth Trajectory")
 ```
 
-![](README_files/figure-markdown_github/Plot%20results-abundance-1.png)
+![](README_files/figure-gfm/Plot%20results-abundance-1.png)<!-- -->
 
 ``` r
 res_df <- res_df%>%rbind(data.frame(rbind(yr_df),
@@ -326,7 +319,7 @@ res_df <- res_df%>%rbind(data.frame(rbind(yr_df),
   expand_limits(y=c(0))
 ```
 
-![](README_files/figure-markdown_github/Plot%20results-abundance-2.png)
+![](README_files/figure-gfm/Plot%20results-abundance-2.png)<!-- -->
 
 ``` r
 #   
@@ -358,8 +351,7 @@ res_df <- res_df%>%rbind(data.frame(rbind(yr_df),
 #ggsave(here::here("plots", "abundance_MF.png"), width=5, height=8)
 ```
 
-GROUP SPECIFIC VITAL RATES
---------------------------
+\#\#GROUP SPECIFIC VITAL RATES
 
 ``` r
 #R
@@ -440,14 +432,13 @@ ggplot(pop_df2%>%
   geom_vline(xintercept = 2014,linetype="dashed")
 ```
 
-![](README_files/figure-markdown_github/Plot%20results-vital%20rates-1.png)
+![](README_files/figure-gfm/Plot%20results-vital%20rates-1.png)<!-- -->
 
 ``` r
 #ggsave(here::here("plots", "vital_rates.png"), width=8, height=5)
 ```
 
-COMPARE TO RAW VITAL RATE DATA
-------------------------------
+\#\#COMPARE TO RAW VITAL RATE DATA
 
 ``` r
 calc.vr <- pop_df2%>%
@@ -498,34 +489,34 @@ ggplot(aes(x = yrs, y = estimate, fill=class)) +
   geom_vline(xintercept = 2014.5,linetype="dashed")
 ```
 
-![](README_files/figure-markdown_github/Plot%20results-vital%20rates%20vs%20raw%20data-1.png)
+![](README_files/figure-gfm/Plot%20results-vital%20rates%20vs%20raw%20data-1.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots", "KZ_vital_ratesfit.png"), width=8, height=7)
+#ggsave(here::here("plots", "KZ_vital_ratesfit.png"), width=8, height=7)
 
+write_csv(raw.vr, here::here("data", "KZ", "vitalrate_validation_KZ.csv"))
 
-raw.vr%>%
-  filter(pop=="Pen" & yrs>2013)%>%
-  arrange(yrs,param)%>%
-  mutate(l=case_when(param=="Recruitment"~lag(estimate)/(1-estimate),
-                     TRUE~NA_real_))%>%
-  drop_na(l)%>%
-  pull(l)%>%
-  gm_mean()
-
-
-calc.vr%>%
-  filter(pop=="Pen" & yrs>2013)%>%
-  arrange(yrs,param)%>%
-  mutate(l=case_when(param=="Recruitment"~lag(estimate)/(1-estimate),
-                     TRUE~NA_real_))%>%
-  drop_na(l)%>%
-  pull(l)%>%
-  gm_mean()
+# raw.vr%>%
+#   filter(pop=="Pen" & yrs>2013)%>%
+#   arrange(yrs,param)%>%
+#   mutate(l=case_when(param=="Recruitment"~lag(estimate)/(1-estimate),
+#                      TRUE~NA_real_))%>%
+#   drop_na(l)%>%
+#   pull(l)%>%
+#   gm_mean()
+# 
+# 
+# calc.vr%>%
+#   filter(pop=="Pen" & yrs>2013)%>%
+#   arrange(yrs,param)%>%
+#   mutate(l=case_when(param=="Recruitment"~lag(estimate)/(1-estimate),
+#                      TRUE~NA_real_))%>%
+#   drop_na(l)%>%
+#   pull(l)%>%
+#   gm_mean()
 ```
 
-COMPARE TO RAW COUNT DATA
--------------------------
+\#\#COMPARE TO RAW COUNT DATA
 
 ``` r
 raw.abund <-data.frame(param="MF_Estimate",
@@ -562,7 +553,8 @@ ggplot(aes(x = yrs, y = est, fill=class)) +
   expand_limits(y=0)
 ```
 
-![](README_files/figure-markdown_github/Plot%20results-counts%20vs%20raw%20data-1.png) \#\# POP SIMULATION--PARTITION EFFECTS OF PEN vs FREE
+![](README_files/figure-gfm/Plot%20results-counts%20vs%20raw%20data-1.png)<!-- -->
+\#\# POP SIMULATION–PARTITION EFFECTS OF PEN vs FREE
 
 ``` r
 pop.sim <-data.frame(yrs=rep(c(2014:2020), times=3),
@@ -587,17 +579,16 @@ ggplot(pop.sim%>%mutate(pop=fct_relevel(pop,"Pen + Wolf","Wolf","Control")),
         legend.title=element_text(size=15))
 ```
 
-![](README_files/figure-markdown_github/Popsim-1.png)
+![](README_files/figure-gfm/Popsim-1.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots", "kz_sim.png"), width=5, height=5)
+#ggsave(here::here("plots", "kz_sim.png"), width=5, height=5)
 ```
 
-AGE STRUCTURE
--------------
+## AGE STRUCTURE
 
 ``` r
-as.data.frame(out_rnd_eff$mean$N[,,1])%>%
+pop_age <-as.data.frame(out_rnd_eff$mean$N[,,1])%>%
   mutate(pop="Free",
          year=yrs)%>%
   pivot_longer(-c("pop","year"))%>%
@@ -608,8 +599,9 @@ rbind(
          year=yrs)%>%
   pivot_longer(-c("pop","year"))%>%
   mutate(name=str_sub(name,2,-1))
-)%>%
-  ggplot(aes(x=year, y=value, fill = name)) +
+)
+  pop_age%>%
+    ggplot(aes(x=year, y=value, fill = name)) +
   geom_area()+
   ylab("Abundance")+
   xlab("Year")+
@@ -617,26 +609,14 @@ rbind(
     theme_ipsum()
 ```
 
-![](README_files/figure-markdown_github/Age%20structure-1.png)
+![](README_files/figure-gfm/Age%20structure-1.png)<!-- -->
 
 ``` r
-as.data.frame(out_rnd_eff$mean$N[,,1])%>%
-  mutate(pop="Free",
-         year=yrs)%>%
-  pivot_longer(-c("pop","year"))%>%
-  mutate(name=str_sub(name,2,-1))%>%
-rbind(
-  as.data.frame(out_rnd_eff$mean$N[,,2])%>%
-  mutate(pop="Pen",
-         year=yrs)%>%
-  pivot_longer(-c("pop","year"))%>%
-  mutate(name=str_sub(name,2,-1))
-)%>%
+pop_age%>%
   group_by(pop,year)%>%
   mutate(sum=sum(value),
          value2=value/sum)%>%
   mutate(Ageclass=name)%>%
-  
   ggplot(aes(x=year, y=value2, fill = Ageclass)) +
   geom_area()+
   ylab("Proportion in each ageclass")+
@@ -647,21 +627,10 @@ rbind(
 
     ## Warning: Removed 57 rows containing missing values (position_stack).
 
-![](README_files/figure-markdown_github/Age%20structure-2.png)
+![](README_files/figure-gfm/Age%20structure-2.png)<!-- -->
 
 ``` r
-as.data.frame(out_rnd_eff$mean$N[,,1])%>%
-  mutate(pop="Free",
-         year=yrs)%>%
-  pivot_longer(-c("pop","year"))%>%
-  mutate(name=str_sub(name,2,-1))%>%
-rbind(
-  as.data.frame(out_rnd_eff$mean$N[,,2])%>%
-  mutate(pop="Pen",
-         year=yrs)%>%
-  pivot_longer(-c("pop","year"))%>%
-  mutate(name=str_sub(name,2,-1))
-)%>%
+pop_age%>%
   filter(year>2013)%>%
   ggplot(aes(x=year, y=value, fill = name)) +
   geom_area()+
@@ -671,22 +640,26 @@ rbind(
     theme_ipsum()
 ```
 
-![](README_files/figure-markdown_github/Age%20structure-3.png)
+![](README_files/figure-gfm/Age%20structure-3.png)<!-- -->
 
 ``` r
-as.data.frame(out_rnd_eff$mean$N[,,1])%>%
-  mutate(pop="Free",
-         year=yrs)%>%
-rbind(
-  as.data.frame(out_rnd_eff$mean$N[,,2])%>%
-  mutate(pop="Pen",
-         year=yrs)
-)%>%
-  write_csv(here::here("ages_forScott.csv"))
+pop_age%>%
+  group_by(year,name)%>%
+  summarise(sum=sum(value))%>%
+    group_by(year)%>%
+  mutate(value2=sum/sum(sum))%>%
+    mutate(Ageclass=name)%>%
+    ggplot(aes(x=year, y=value2, fill = Ageclass)) +
+  geom_area()+
+  ylab("Proportion in each ageclass")+
+  xlab("Year")+
+    theme_ipsum()+
+    geom_vline(xintercept = 2012.5)
 ```
 
-Summarize population growth
----------------------------
+![](README_files/figure-gfm/Age%20structure-4.png)<!-- -->
+
+\#\#Summarize population growth
 
 ``` r
 summary.l <- tribble(
@@ -717,11 +690,12 @@ gt(summary.l)%>%
 ```
 
 <!--html_preserve-->
+
 <style>html {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#eddnitjofk .gt_table {
+#pepmsltehd .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -744,7 +718,7 @@ gt(summary.l)%>%
   border-left-color: #D3D3D3;
 }
 
-#eddnitjofk .gt_heading {
+#pepmsltehd .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -756,7 +730,7 @@ gt(summary.l)%>%
   border-right-color: #D3D3D3;
 }
 
-#eddnitjofk .gt_title {
+#pepmsltehd .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -766,7 +740,7 @@ gt(summary.l)%>%
   border-bottom-width: 0;
 }
 
-#eddnitjofk .gt_subtitle {
+#pepmsltehd .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -776,13 +750,13 @@ gt(summary.l)%>%
   border-top-width: 0;
 }
 
-#eddnitjofk .gt_bottom_border {
+#pepmsltehd .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#eddnitjofk .gt_col_headings {
+#pepmsltehd .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -797,7 +771,7 @@ gt(summary.l)%>%
   border-right-color: #D3D3D3;
 }
 
-#eddnitjofk .gt_col_heading {
+#pepmsltehd .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -817,7 +791,7 @@ gt(summary.l)%>%
   overflow-x: hidden;
 }
 
-#eddnitjofk .gt_column_spanner_outer {
+#pepmsltehd .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -829,15 +803,15 @@ gt(summary.l)%>%
   padding-right: 4px;
 }
 
-#eddnitjofk .gt_column_spanner_outer:first-child {
+#pepmsltehd .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#eddnitjofk .gt_column_spanner_outer:last-child {
+#pepmsltehd .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#eddnitjofk .gt_column_spanner {
+#pepmsltehd .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -849,7 +823,7 @@ gt(summary.l)%>%
   width: 100%;
 }
 
-#eddnitjofk .gt_group_heading {
+#pepmsltehd .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -871,7 +845,7 @@ gt(summary.l)%>%
   vertical-align: middle;
 }
 
-#eddnitjofk .gt_empty_group_heading {
+#pepmsltehd .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -886,19 +860,19 @@ gt(summary.l)%>%
   vertical-align: middle;
 }
 
-#eddnitjofk .gt_striped {
+#pepmsltehd .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#eddnitjofk .gt_from_md > :first-child {
+#pepmsltehd .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#eddnitjofk .gt_from_md > :last-child {
+#pepmsltehd .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#eddnitjofk .gt_row {
+#pepmsltehd .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -917,7 +891,7 @@ gt(summary.l)%>%
   overflow-x: hidden;
 }
 
-#eddnitjofk .gt_stub {
+#pepmsltehd .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -929,7 +903,7 @@ gt(summary.l)%>%
   padding-left: 12px;
 }
 
-#eddnitjofk .gt_summary_row {
+#pepmsltehd .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -939,7 +913,7 @@ gt(summary.l)%>%
   padding-right: 5px;
 }
 
-#eddnitjofk .gt_first_summary_row {
+#pepmsltehd .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -949,7 +923,7 @@ gt(summary.l)%>%
   border-top-color: #D3D3D3;
 }
 
-#eddnitjofk .gt_grand_summary_row {
+#pepmsltehd .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -959,7 +933,7 @@ gt(summary.l)%>%
   padding-right: 5px;
 }
 
-#eddnitjofk .gt_first_grand_summary_row {
+#pepmsltehd .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -969,7 +943,7 @@ gt(summary.l)%>%
   border-top-color: #D3D3D3;
 }
 
-#eddnitjofk .gt_table_body {
+#pepmsltehd .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -978,7 +952,7 @@ gt(summary.l)%>%
   border-bottom-color: #D3D3D3;
 }
 
-#eddnitjofk .gt_footnotes {
+#pepmsltehd .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -992,13 +966,13 @@ gt(summary.l)%>%
   border-right-color: #D3D3D3;
 }
 
-#eddnitjofk .gt_footnote {
+#pepmsltehd .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#eddnitjofk .gt_sourcenotes {
+#pepmsltehd .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1012,112 +986,310 @@ gt(summary.l)%>%
   border-right-color: #D3D3D3;
 }
 
-#eddnitjofk .gt_sourcenote {
+#pepmsltehd .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#eddnitjofk .gt_left {
+#pepmsltehd .gt_left {
   text-align: left;
 }
 
-#eddnitjofk .gt_center {
+#pepmsltehd .gt_center {
   text-align: center;
 }
 
-#eddnitjofk .gt_right {
+#pepmsltehd .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#eddnitjofk .gt_font_normal {
+#pepmsltehd .gt_font_normal {
   font-weight: normal;
 }
 
-#eddnitjofk .gt_font_bold {
+#pepmsltehd .gt_font_bold {
   font-weight: bold;
 }
 
-#eddnitjofk .gt_font_italic {
+#pepmsltehd .gt_font_italic {
   font-style: italic;
 }
 
-#eddnitjofk .gt_super {
+#pepmsltehd .gt_super {
   font-size: 65%;
 }
 
-#eddnitjofk .gt_footnote_marks {
+#pepmsltehd .gt_footnote_marks {
   font-style: italic;
   font-size: 65%;
 }
 </style>
+
+<div id="pepmsltehd" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+
 <table class="gt_table">
+
 <thead class="gt_header">
-    <tr>
-      <th colspan="4" class="gt_heading gt_title gt_font_normal" style>Population Growth Rates</th>
-    </tr>
-    <tr>
-      <th colspan="4" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style></th>
-    </tr>
+
+<tr>
+
+<th colspan="4" class="gt_heading gt_title gt_font_normal" style>
+
+Population Growth Rates
+
+</th>
+
+</tr>
+
+<tr>
+
+<th colspan="4" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style>
+
+</th>
+
+</tr>
 
 </thead>
+
 <thead class="gt_col_headings">
-    <tr>
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">Group</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">Years</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">Lambda</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">95% CI</th>
-    </tr>
+
+<tr>
+
+<th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">
+
+Group
+
+</th>
+
+<th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">
+
+Years
+
+</th>
+
+<th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">
+
+Lambda
+
+</th>
+
+<th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">
+
+95% CI
+
+</th>
+
+</tr>
 
 </thead>
+
 <tbody class="gt_table_body">
-    <tr>
-      <td class="gt_row gt_left">pre-mgmt</td>
-      <td class="gt_row gt_left">1996-2013</td>
-      <td class="gt_row gt_right">0.89</td>
-      <td class="gt_row gt_left">0.88-0.89</td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left">post-mgmt</td>
-      <td class="gt_row gt_left">2015-2020</td>
-      <td class="gt_row gt_right">1.07</td>
-      <td class="gt_row gt_left">1.04-1.09</td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left">post-mgmt_intensewolf</td>
-      <td class="gt_row gt_left">2017-2020</td>
-      <td class="gt_row gt_right">1.04</td>
-      <td class="gt_row gt_left">1.01-1.08</td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left">Free_intensewolf</td>
-      <td class="gt_row gt_left">2017-2020</td>
-      <td class="gt_row gt_right">0.94</td>
-      <td class="gt_row gt_left">0.84-1.03</td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left">Pen_intensewolf</td>
-      <td class="gt_row gt_left">2017-2020</td>
-      <td class="gt_row gt_right">1.14</td>
-      <td class="gt_row gt_left">1.14-1.14</td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left">Free</td>
-      <td class="gt_row gt_left">2014-2020</td>
-      <td class="gt_row gt_right">0.98</td>
-      <td class="gt_row gt_left">0.91-1.04</td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left">Pen</td>
-      <td class="gt_row gt_left">2015-2020</td>
-      <td class="gt_row gt_right">1.10</td>
-      <td class="gt_row gt_left">1.1-1.1</td>
-    </tr>
+
+<tr>
+
+<td class="gt_row gt_left">
+
+pre-mgmt
+
+</td>
+
+<td class="gt_row gt_left">
+
+1996-2013
+
+</td>
+
+<td class="gt_row gt_right">
+
+0.89
+
+</td>
+
+<td class="gt_row gt_left">
+
+0.88-0.89
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left">
+
+post-mgmt
+
+</td>
+
+<td class="gt_row gt_left">
+
+2015-2020
+
+</td>
+
+<td class="gt_row gt_right">
+
+1.07
+
+</td>
+
+<td class="gt_row gt_left">
+
+1.04-1.09
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left">
+
+post-mgmt\_intensewolf
+
+</td>
+
+<td class="gt_row gt_left">
+
+2017-2020
+
+</td>
+
+<td class="gt_row gt_right">
+
+1.04
+
+</td>
+
+<td class="gt_row gt_left">
+
+1.01-1.08
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left">
+
+Free\_intensewolf
+
+</td>
+
+<td class="gt_row gt_left">
+
+2017-2020
+
+</td>
+
+<td class="gt_row gt_right">
+
+0.94
+
+</td>
+
+<td class="gt_row gt_left">
+
+0.84-1.03
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left">
+
+Pen\_intensewolf
+
+</td>
+
+<td class="gt_row gt_left">
+
+2017-2020
+
+</td>
+
+<td class="gt_row gt_right">
+
+1.14
+
+</td>
+
+<td class="gt_row gt_left">
+
+1.14-1.14
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left">
+
+Free
+
+</td>
+
+<td class="gt_row gt_left">
+
+2014-2020
+
+</td>
+
+<td class="gt_row gt_right">
+
+0.98
+
+</td>
+
+<td class="gt_row gt_left">
+
+0.91-1.04
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left">
+
+Pen
+
+</td>
+
+<td class="gt_row gt_left">
+
+2015-2020
+
+</td>
+
+<td class="gt_row gt_right">
+
+1.10
+
+</td>
+
+<td class="gt_row gt_left">
+
+1.1-1.1
+
+</td>
+
+</tr>
 
 </tbody>
+
 </table>
 
+</div>
+
 <!--/html_preserve-->
+
 ``` r
 data.frame(rbind(yr_df),
            est=c(out_rnd_eff$mean$totNMF),
@@ -1128,11 +1300,8 @@ data.frame(rbind(yr_df),
   filter(yrs>2013)%>%
   drop_na(l)%>%
   summarise(l.all=gm_mean(l)%>%round(2))
-```
 
-l.all 1 1.13
 
-``` r
 mean_r4_C <- c()
 mean_r4_P <- c()
 q2.5_r4_C <- c()
@@ -1145,57 +1314,9 @@ q2.5_r4_C[1] <- 1
 q2.5_r4_P[1] <- 1
 q97.5_r4_C[1] <- 1
 q97.5_r4_P[1] <- 1
-
-for(y in 2:nyr){
-# mean_r4_C[y] <- out_rnd_eff$mean$N[y,1,1]/((out_rnd_eff$mean$N[y-1,4,1]*out_rnd_eff$mean$S[y-1,4,1])+(out_rnd_eff$mean$N[y-1,3,1]*out_rnd_eff$mean$S[y-1,3,1]))
-# mean_r4_P[y] <- out_rnd_eff$mean$N[y,1,2]/((out_rnd_eff$mean$N[y-1,4,2]*out_rnd_eff$mean$S[y-1,4,2])+(out_rnd_eff$mean$N[y-1,3,2]*out_rnd_eff$mean$S[y-1,3,2]))
-mean_r4_C[y] <- out_rnd_eff$mean$N[y,1,1]/(out_rnd_eff$mean$N[y-1,3,1]*out_rnd_eff$mean$S[y-1,1])
-mean_r4_P[y] <- out_rnd_eff$mean$N[y,1,2]/(out_rnd_eff$mean$N[y-1,3,2]*out_rnd_eff$mean$S[y-1,2])
-
-q2.5_r4_C[y] <- out_rnd_eff$q2.5$N[y,1,1]/(out_rnd_eff$mean$N[y-1,3,1]*out_rnd_eff$mean$S[y-1,1])
-q2.5_r4_P[y] <- out_rnd_eff$q2.5$N[y,1,2]/(out_rnd_eff$mean$N[y-1,3,2]*out_rnd_eff$mean$S[y-1,2])
-
-q97.5_r4_C[y] <- out_rnd_eff$q97.5$N[y,1,1]/(out_rnd_eff$mean$N[y-1,3,1]*out_rnd_eff$mean$S[y-1,1])
-q97.5_r4_P[y] <- out_rnd_eff$q97.5$N[y,1,2]/(out_rnd_eff$mean$N[y-1,3,2]*out_rnd_eff$mean$S[y-1,2])
-}
-
-mean(mean_r4_C[2:18])
 ```
 
-\[1\] 0.2598022
-
-``` r
-mean(mean_r4_P[20:25])
-```
-
-\[1\] NaN
-
-``` r
-mean(mean_r4_C[19:25])
-```
-
-\[1\] 0.2102458
-
-``` r
-out_rnd_eff$mean$wolf_eff_proportion
-```
-
-\[1\] 0.5212973
-
-``` r
-out_rnd_eff$mean$pen_eff_proportion
-```
-
-\[1\] 0.4787027
-
-``` r
-out_rnd_eff$mean$mean_r3_pen
-```
-
-NULL
-
-Summarize vital rates
----------------------
+\#\#Summarize vital rates
 
 ``` r
 summary.s <- tribble(
@@ -1206,26 +1327,17 @@ summary.s <- tribble(
 
 summary.r <- tribble(
   ~pop,~r, ~r.lower, ~r.upper,
-"pre-mgmt",out_rnd_eff$mean$mean_r_pre, out_rnd_eff$q2.5$mean_r_pre,out_rnd_eff$q97.5$geom_mean_lambda_pre,
-"pen", out_rnd_eff$mean$mean_r_pen, out_rnd_eff$q2.5$mean_r_pen, out_rnd_eff$q97.5$mean_r_pen,
-"wolf", out_rnd_eff$mean$mean_r_wolf, out_rnd_eff$q2.5$mean_r_wolf, out_rnd_eff$q97.5$mean_r_wolf)
-
-summary.r3 <- tribble(
-  ~pop,~r3, ~r3.lower, ~r3.upper,
-"pre-mgmt",mean(mean_r4_C[2:18]), mean(q2.5_r4_C[2:18]), mean(q97.5_r4_C[2:18]),
-"pen", mean(mean_r4_P[20:25]), mean(q2.5_r4_P[20:25]), mean(q97.5_r4_P[20:25]),
-"wolf", mean(mean_r4_C[19:25]), mean(q2.5_r4_C[19:25]), mean(q97.5_r4_C[19:25]))
-
+"pre-mgmt",gm_mean(out_rnd_eff$mean$R[2:19,1]), gm_mean(out_rnd_eff$q2.5$R[2:19,1]), gm_mean(out_rnd_eff$q97.5$R[2:19,1]),
+"pen", gm_mean(out_rnd_eff$mean$R[21:26,2]), gm_mean(out_rnd_eff$q2.5$R[21:26,2]), gm_mean(out_rnd_eff$q97.5$R[21:26,2]),
+"wolf", gm_mean(out_rnd_eff$mean$R[20:26,1]), gm_mean(out_rnd_eff$q2.5$R[20:26,1]), gm_mean(out_rnd_eff$q97.5$R[20:26,1]))
 
 
 
 summary.vr <- summary.s%>%
   left_join(summary.r)%>%
-  left_join(summary.r3)%>%
   mutate_if(is.numeric,function(x) round(x,2))
 ```
 
-    ## Joining, by = "pop"
     ## Joining, by = "pop"
 
 ``` r
@@ -1233,13 +1345,12 @@ summary.vr$Years <- c("1996-2013", "2015-2020", "2014-2020")
 
 summary.vr <- summary.vr%>%
   mutate(`s 95% CI`=paste(s.lower,s.upper, sep="-"),
-         `r 95% CI`=paste(r.lower,r.upper, sep="-"),
-         `r3 95% CI`=paste(r3.lower,r3.upper, sep="-"))%>%
-  select(pop, Years, s,`s 95% CI`, r,`r 95% CI`, r3, `r3 95% CI`)
+         `r 95% CI`=paste(r.lower,r.upper, sep="-"))%>%
+  select(pop, Years, s,`s 95% CI`, r,`r 95% CI`)
 
 
 
-colnames(summary.vr) <- c("Group", "Years", "AF Survival","95% CI", "Recruitment","r95% CI", "Adult F Recruitment", "r3_95% CI")
+colnames(summary.vr) <- c("Group", "Years", "AF Survival","95% CI", "Recruitment","r95% CI")
 
 
 gt(summary.vr)%>%
@@ -1249,11 +1360,12 @@ gt(summary.vr)%>%
 ```
 
 <!--html_preserve-->
+
 <style>html {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#mrrmcpvuit .gt_table {
+#yezmqwldvd .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -1276,7 +1388,7 @@ gt(summary.vr)%>%
   border-left-color: #D3D3D3;
 }
 
-#mrrmcpvuit .gt_heading {
+#yezmqwldvd .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -1288,7 +1400,7 @@ gt(summary.vr)%>%
   border-right-color: #D3D3D3;
 }
 
-#mrrmcpvuit .gt_title {
+#yezmqwldvd .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -1298,7 +1410,7 @@ gt(summary.vr)%>%
   border-bottom-width: 0;
 }
 
-#mrrmcpvuit .gt_subtitle {
+#yezmqwldvd .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -1308,13 +1420,13 @@ gt(summary.vr)%>%
   border-top-width: 0;
 }
 
-#mrrmcpvuit .gt_bottom_border {
+#yezmqwldvd .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#mrrmcpvuit .gt_col_headings {
+#yezmqwldvd .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1329,7 +1441,7 @@ gt(summary.vr)%>%
   border-right-color: #D3D3D3;
 }
 
-#mrrmcpvuit .gt_col_heading {
+#yezmqwldvd .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1349,7 +1461,7 @@ gt(summary.vr)%>%
   overflow-x: hidden;
 }
 
-#mrrmcpvuit .gt_column_spanner_outer {
+#yezmqwldvd .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1361,15 +1473,15 @@ gt(summary.vr)%>%
   padding-right: 4px;
 }
 
-#mrrmcpvuit .gt_column_spanner_outer:first-child {
+#yezmqwldvd .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#mrrmcpvuit .gt_column_spanner_outer:last-child {
+#yezmqwldvd .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#mrrmcpvuit .gt_column_spanner {
+#yezmqwldvd .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -1381,7 +1493,7 @@ gt(summary.vr)%>%
   width: 100%;
 }
 
-#mrrmcpvuit .gt_group_heading {
+#yezmqwldvd .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -1403,7 +1515,7 @@ gt(summary.vr)%>%
   vertical-align: middle;
 }
 
-#mrrmcpvuit .gt_empty_group_heading {
+#yezmqwldvd .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -1418,19 +1530,19 @@ gt(summary.vr)%>%
   vertical-align: middle;
 }
 
-#mrrmcpvuit .gt_striped {
+#yezmqwldvd .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#mrrmcpvuit .gt_from_md > :first-child {
+#yezmqwldvd .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#mrrmcpvuit .gt_from_md > :last-child {
+#yezmqwldvd .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#mrrmcpvuit .gt_row {
+#yezmqwldvd .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1449,7 +1561,7 @@ gt(summary.vr)%>%
   overflow-x: hidden;
 }
 
-#mrrmcpvuit .gt_stub {
+#yezmqwldvd .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1461,7 +1573,7 @@ gt(summary.vr)%>%
   padding-left: 12px;
 }
 
-#mrrmcpvuit .gt_summary_row {
+#yezmqwldvd .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1471,7 +1583,7 @@ gt(summary.vr)%>%
   padding-right: 5px;
 }
 
-#mrrmcpvuit .gt_first_summary_row {
+#yezmqwldvd .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1481,7 +1593,7 @@ gt(summary.vr)%>%
   border-top-color: #D3D3D3;
 }
 
-#mrrmcpvuit .gt_grand_summary_row {
+#yezmqwldvd .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1491,7 +1603,7 @@ gt(summary.vr)%>%
   padding-right: 5px;
 }
 
-#mrrmcpvuit .gt_first_grand_summary_row {
+#yezmqwldvd .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1501,7 +1613,7 @@ gt(summary.vr)%>%
   border-top-color: #D3D3D3;
 }
 
-#mrrmcpvuit .gt_table_body {
+#yezmqwldvd .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1510,7 +1622,7 @@ gt(summary.vr)%>%
   border-bottom-color: #D3D3D3;
 }
 
-#mrrmcpvuit .gt_footnotes {
+#yezmqwldvd .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1524,13 +1636,13 @@ gt(summary.vr)%>%
   border-right-color: #D3D3D3;
 }
 
-#mrrmcpvuit .gt_footnote {
+#yezmqwldvd .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#mrrmcpvuit .gt_sourcenotes {
+#yezmqwldvd .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1544,106 +1656,247 @@ gt(summary.vr)%>%
   border-right-color: #D3D3D3;
 }
 
-#mrrmcpvuit .gt_sourcenote {
+#yezmqwldvd .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#mrrmcpvuit .gt_left {
+#yezmqwldvd .gt_left {
   text-align: left;
 }
 
-#mrrmcpvuit .gt_center {
+#yezmqwldvd .gt_center {
   text-align: center;
 }
 
-#mrrmcpvuit .gt_right {
+#yezmqwldvd .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#mrrmcpvuit .gt_font_normal {
+#yezmqwldvd .gt_font_normal {
   font-weight: normal;
 }
 
-#mrrmcpvuit .gt_font_bold {
+#yezmqwldvd .gt_font_bold {
   font-weight: bold;
 }
 
-#mrrmcpvuit .gt_font_italic {
+#yezmqwldvd .gt_font_italic {
   font-style: italic;
 }
 
-#mrrmcpvuit .gt_super {
+#yezmqwldvd .gt_super {
   font-size: 65%;
 }
 
-#mrrmcpvuit .gt_footnote_marks {
+#yezmqwldvd .gt_footnote_marks {
   font-style: italic;
   font-size: 65%;
 }
 </style>
+
+<div id="yezmqwldvd" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+
 <table class="gt_table">
+
 <thead class="gt_header">
-    <tr>
-      <th colspan="8" class="gt_heading gt_title gt_font_normal" style>Vital Rates</th>
-    </tr>
-    <tr>
-      <th colspan="8" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style></th>
-    </tr>
+
+<tr>
+
+<th colspan="6" class="gt_heading gt_title gt_font_normal" style>
+
+Vital Rates
+
+</th>
+
+</tr>
+
+<tr>
+
+<th colspan="6" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style>
+
+</th>
+
+</tr>
 
 </thead>
+
 <thead class="gt_col_headings">
-    <tr>
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">Group</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">Years</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">AF Survival</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">95% CI</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">Recruitment</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">r95% CI</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">Adult F Recruitment</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">r3_95% CI</th>
-    </tr>
+
+<tr>
+
+<th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">
+
+Group
+
+</th>
+
+<th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">
+
+Years
+
+</th>
+
+<th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">
+
+AF Survival
+
+</th>
+
+<th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">
+
+95% CI
+
+</th>
+
+<th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">
+
+Recruitment
+
+</th>
+
+<th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">
+
+r95% CI
+
+</th>
+
+</tr>
 
 </thead>
+
 <tbody class="gt_table_body">
-    <tr>
-      <td class="gt_row gt_left">pre-mgmt</td>
-      <td class="gt_row gt_left">1996-2013</td>
-      <td class="gt_row gt_right">0.76</td>
-      <td class="gt_row gt_left">0.72-0.89</td>
-      <td class="gt_row gt_right">0.20</td>
-      <td class="gt_row gt_left">0.17-0.89</td>
-      <td class="gt_row gt_right">0.26</td>
-      <td class="gt_row gt_left">0.08-0.54</td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left">pen</td>
-      <td class="gt_row gt_left">2015-2020</td>
-      <td class="gt_row gt_right">0.00</td>
-      <td class="gt_row gt_left">0-0</td>
-      <td class="gt_row gt_right">0.28</td>
-      <td class="gt_row gt_left">0.28-0.28</td>
-      <td class="gt_row gt_right">NaN</td>
-      <td class="gt_row gt_left">NaN-NaN</td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left">wolf</td>
-      <td class="gt_row gt_left">2014-2020</td>
-      <td class="gt_row gt_right">0.86</td>
-      <td class="gt_row gt_left">0.79-0.92</td>
-      <td class="gt_row gt_right">0.21</td>
-      <td class="gt_row gt_left">0.16-0.24</td>
-      <td class="gt_row gt_right">0.21</td>
-      <td class="gt_row gt_left">0.14-0.28</td>
-    </tr>
+
+<tr>
+
+<td class="gt_row gt_left">
+
+pre-mgmt
+
+</td>
+
+<td class="gt_row gt_left">
+
+1996-2013
+
+</td>
+
+<td class="gt_row gt_right">
+
+0.74
+
+</td>
+
+<td class="gt_row gt_left">
+
+0.71-0.89
+
+</td>
+
+<td class="gt_row gt_right">
+
+0.21
+
+</td>
+
+<td class="gt_row gt_left">
+
+0.12-0.32
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left">
+
+pen
+
+</td>
+
+<td class="gt_row gt_left">
+
+2015-2020
+
+</td>
+
+<td class="gt_row gt_right">
+
+0.91
+
+</td>
+
+<td class="gt_row gt_left">
+
+0.91-0.91
+
+</td>
+
+<td class="gt_row gt_right">
+
+0.24
+
+</td>
+
+<td class="gt_row gt_left">
+
+0.24-0.24
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left">
+
+wolf
+
+</td>
+
+<td class="gt_row gt_left">
+
+2014-2020
+
+</td>
+
+<td class="gt_row gt_right">
+
+0.85
+
+</td>
+
+<td class="gt_row gt_left">
+
+0.79-0.91
+
+</td>
+
+<td class="gt_row gt_right">
+
+0.22
+
+</td>
+
+<td class="gt_row gt_left">
+
+0.13-0.32
+
+</td>
+
+</tr>
 
 </tbody>
+
 </table>
 
+</div>
+
 <!--/html_preserve-->
-Summarize effect of treatments
-------------------------------
+
+\#\#Summarize effect of treatments
 
 ``` r
 summary.effect <- tribble(
@@ -1661,11 +1914,12 @@ gt(summary.effect)%>%
 ```
 
 <!--html_preserve-->
+
 <style>html {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#cefqyinntg .gt_table {
+#withpzfbwy .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -1688,7 +1942,7 @@ gt(summary.effect)%>%
   border-left-color: #D3D3D3;
 }
 
-#cefqyinntg .gt_heading {
+#withpzfbwy .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -1700,7 +1954,7 @@ gt(summary.effect)%>%
   border-right-color: #D3D3D3;
 }
 
-#cefqyinntg .gt_title {
+#withpzfbwy .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -1710,7 +1964,7 @@ gt(summary.effect)%>%
   border-bottom-width: 0;
 }
 
-#cefqyinntg .gt_subtitle {
+#withpzfbwy .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -1720,13 +1974,13 @@ gt(summary.effect)%>%
   border-top-width: 0;
 }
 
-#cefqyinntg .gt_bottom_border {
+#withpzfbwy .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#cefqyinntg .gt_col_headings {
+#withpzfbwy .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1741,7 +1995,7 @@ gt(summary.effect)%>%
   border-right-color: #D3D3D3;
 }
 
-#cefqyinntg .gt_col_heading {
+#withpzfbwy .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1761,7 +2015,7 @@ gt(summary.effect)%>%
   overflow-x: hidden;
 }
 
-#cefqyinntg .gt_column_spanner_outer {
+#withpzfbwy .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1773,15 +2027,15 @@ gt(summary.effect)%>%
   padding-right: 4px;
 }
 
-#cefqyinntg .gt_column_spanner_outer:first-child {
+#withpzfbwy .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#cefqyinntg .gt_column_spanner_outer:last-child {
+#withpzfbwy .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#cefqyinntg .gt_column_spanner {
+#withpzfbwy .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -1793,7 +2047,7 @@ gt(summary.effect)%>%
   width: 100%;
 }
 
-#cefqyinntg .gt_group_heading {
+#withpzfbwy .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -1815,7 +2069,7 @@ gt(summary.effect)%>%
   vertical-align: middle;
 }
 
-#cefqyinntg .gt_empty_group_heading {
+#withpzfbwy .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -1830,19 +2084,19 @@ gt(summary.effect)%>%
   vertical-align: middle;
 }
 
-#cefqyinntg .gt_striped {
+#withpzfbwy .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#cefqyinntg .gt_from_md > :first-child {
+#withpzfbwy .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#cefqyinntg .gt_from_md > :last-child {
+#withpzfbwy .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#cefqyinntg .gt_row {
+#withpzfbwy .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1861,7 +2115,7 @@ gt(summary.effect)%>%
   overflow-x: hidden;
 }
 
-#cefqyinntg .gt_stub {
+#withpzfbwy .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1873,7 +2127,7 @@ gt(summary.effect)%>%
   padding-left: 12px;
 }
 
-#cefqyinntg .gt_summary_row {
+#withpzfbwy .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1883,7 +2137,7 @@ gt(summary.effect)%>%
   padding-right: 5px;
 }
 
-#cefqyinntg .gt_first_summary_row {
+#withpzfbwy .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1893,7 +2147,7 @@ gt(summary.effect)%>%
   border-top-color: #D3D3D3;
 }
 
-#cefqyinntg .gt_grand_summary_row {
+#withpzfbwy .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1903,7 +2157,7 @@ gt(summary.effect)%>%
   padding-right: 5px;
 }
 
-#cefqyinntg .gt_first_grand_summary_row {
+#withpzfbwy .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1913,7 +2167,7 @@ gt(summary.effect)%>%
   border-top-color: #D3D3D3;
 }
 
-#cefqyinntg .gt_table_body {
+#withpzfbwy .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1922,7 +2176,7 @@ gt(summary.effect)%>%
   border-bottom-color: #D3D3D3;
 }
 
-#cefqyinntg .gt_footnotes {
+#withpzfbwy .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1936,13 +2190,13 @@ gt(summary.effect)%>%
   border-right-color: #D3D3D3;
 }
 
-#cefqyinntg .gt_footnote {
+#withpzfbwy .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#cefqyinntg .gt_sourcenotes {
+#withpzfbwy .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1956,82 +2210,170 @@ gt(summary.effect)%>%
   border-right-color: #D3D3D3;
 }
 
-#cefqyinntg .gt_sourcenote {
+#withpzfbwy .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#cefqyinntg .gt_left {
+#withpzfbwy .gt_left {
   text-align: left;
 }
 
-#cefqyinntg .gt_center {
+#withpzfbwy .gt_center {
   text-align: center;
 }
 
-#cefqyinntg .gt_right {
+#withpzfbwy .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#cefqyinntg .gt_font_normal {
+#withpzfbwy .gt_font_normal {
   font-weight: normal;
 }
 
-#cefqyinntg .gt_font_bold {
+#withpzfbwy .gt_font_bold {
   font-weight: bold;
 }
 
-#cefqyinntg .gt_font_italic {
+#withpzfbwy .gt_font_italic {
   font-style: italic;
 }
 
-#cefqyinntg .gt_super {
+#withpzfbwy .gt_super {
   font-size: 65%;
 }
 
-#cefqyinntg .gt_footnote_marks {
+#withpzfbwy .gt_footnote_marks {
   font-style: italic;
   font-size: 65%;
 }
 </style>
+
+<div id="withpzfbwy" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+
 <table class="gt_table">
+
 <thead class="gt_header">
-    <tr>
-      <th colspan="4" class="gt_heading gt_title gt_font_normal" style>Treatment Effect</th>
-    </tr>
-    <tr>
-      <th colspan="4" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style></th>
-    </tr>
+
+<tr>
+
+<th colspan="4" class="gt_heading gt_title gt_font_normal" style>
+
+Treatment Effect
+
+</th>
+
+</tr>
+
+<tr>
+
+<th colspan="4" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style>
+
+</th>
+
+</tr>
 
 </thead>
+
 <thead class="gt_col_headings">
-    <tr>
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">pop</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">lambda.dif</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">lower</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">upper</th>
-    </tr>
+
+<tr>
+
+<th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">
+
+pop
+
+</th>
+
+<th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">
+
+lambda.dif
+
+</th>
+
+<th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">
+
+lower
+
+</th>
+
+<th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">
+
+upper
+
+</th>
+
+</tr>
 
 </thead>
+
 <tbody class="gt_table_body">
-    <tr>
-      <td class="gt_row gt_left">pre vs post</td>
-      <td class="gt_row gt_right">0.18</td>
-      <td class="gt_row gt_right">0.15</td>
-      <td class="gt_row gt_right">0.21</td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left">pre vs post_iwolf</td>
-      <td class="gt_row gt_right">0.16</td>
-      <td class="gt_row gt_right">0.12</td>
-      <td class="gt_row gt_right">0.20</td>
-    </tr>
+
+<tr>
+
+<td class="gt_row gt_left">
+
+pre vs post
+
+</td>
+
+<td class="gt_row gt_right">
+
+0.18
+
+</td>
+
+<td class="gt_row gt_right">
+
+0.15
+
+</td>
+
+<td class="gt_row gt_right">
+
+0.21
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left">
+
+pre vs post\_iwolf
+
+</td>
+
+<td class="gt_row gt_right">
+
+0.16
+
+</td>
+
+<td class="gt_row gt_right">
+
+0.12
+
+</td>
+
+<td class="gt_row gt_right">
+
+0.19
+
+</td>
+
+</tr>
 
 </tbody>
+
 </table>
 
+</div>
+
 <!--/html_preserve-->
+
 ``` r
 S <- ggs(out_rnd_eff$samples)%>%
   filter(Parameter%in%c("diff_geom_mean_lambda_post_to_pre","diff_geom_mean_lambda_post_to_pre_iwolf"))%>%
@@ -2047,7 +2389,7 @@ ggplot(S, aes(x = value,fill=Parameter)) +
     geom_vline(xintercept = 0)
 ```
 
-![](README_files/figure-markdown_github/effects-1.png)
+![](README_files/figure-gfm/effects-1.png)<!-- -->
 
 ``` r
 S <- ggs(out_rnd_eff$samples)%>%
@@ -2061,4 +2403,4 @@ ggplot(S, aes(x = value,fill=Parameter)) +
     geom_vline(xintercept = 0)
 ```
 
-![](README_files/figure-markdown_github/effects-2.png)
+![](README_files/figure-gfm/effects-2.png)<!-- -->

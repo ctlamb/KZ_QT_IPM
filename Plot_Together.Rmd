@@ -1,5 +1,5 @@
 ---
-title: "Plot results"
+title: "KZ and QT IPM results"
 author: "Sara Williams, Hans Martin, and Clayton Lamb"
 date: '`r format(Sys.time(), "%d %B, %Y")`'
 output: github_document
@@ -8,7 +8,7 @@ output: github_document
 rmarkdown::render(here::here('Plot_Together.Rmd'),
                   output_file = "README.md")
 ```
-
+#See folders KZ and QT for the IPM's for each herd
 
 ##Load Data
 ```{r Load packages and data, results='hide', message=FALSE, warning=FALSE}
@@ -25,8 +25,13 @@ library(ggpubr)
 library(readxl)
 library(here)
 
-load(here::here("KZ", "out_rnd_eff.Rdata"))
+pb_download("kz_out_rnd_eff.Rdata", 
+            repo = "ctlamb/KZ_QT_IPM",
+            dest = here::here())
+load(here::here("kz_out_rnd_eff.Rdata"))
 kz <- out_rnd_eff
+unlink(here::here("kz_out_rnd_eff.Rdata"))
+
 
 yrs <-  seq(from = 1995, to = 2020, by = 1)
 nyr <- length(yrs)
@@ -35,8 +40,13 @@ kz_yr_df <- as.data.frame(cbind(yrs, yr_idx))
 
 
 
-load(here::here("QT", "out_rnd_eff.Rdata"))
+pb_download("qt_out_rnd_eff.Rdata", 
+            repo = "ctlamb/KZ_QT_IPM",
+            dest = here::here())
+load(here::here("qt_out_rnd_eff.Rdata"))
 qt <- out_rnd_eff
+unlink(here::here("qt_out_rnd_eff.Rdata"))
+
 
 yrs <-  seq(from = 2001, to = 2020, by = 1)
 nyr <- length(yrs)
@@ -112,7 +122,7 @@ fit_df <- res_df%>%
                      q97.5=NA,
                      param="Total M+F",
                      herd="Klinse-Za",
-                     type="Observed")%>%
+                     type="Observed_Estimate")%>%
   rbind(
      data.frame(qt_yr_df,
                      est=qt_count_dat$Estimate_ADULTMF + qt_count_dat$Estimate_CALFMF,
@@ -120,18 +130,36 @@ fit_df <- res_df%>%
                      q97.5=NA,
                      param="Total M+F",
                      herd="Quintette",
-                     type="Observed")
+                     type="Observed_Estimate")
+    
+  )%>%
+    rbind(data.frame(kz_yr_df,
+                     est=kz_count_dat$`KZ total count_MAX`,
+                     q2.5=NA,
+                     q97.5=NA,
+                     param="Total M+F",
+                     herd="Klinse-Za",
+                     type="Observed_Mincount"))%>%
+  rbind(
+     data.frame(qt_yr_df,
+                     est=qt_count_dat$MinCount_ADULTMF + qt_count_dat$MinCount_CALFMF, 
+                     q2.5=NA,
+                     q97.5=NA,
+                     param="Total M+F",
+                     herd="Quintette",
+                     type="Observed_Mincount")
     
   )
 )
 
 #res_df <- res_df[-(nyr+1),]
 
-ggplot(fit_df ,aes(x = yrs, y = est, ymin=q2.5, ymax=q97.5, fill=type)) +
+ggplot(data=fit_df%>%filter(type%in%"modelled"), aes(x = yrs, y = est, ymin=q2.5, ymax=q97.5, fill=type)) +
   #geom_cloud(steps=20, max_alpha = 1,se_mult=1.96)+
   geom_ribbon(alpha=0.4)+
   geom_line(aes(color=type)) +
   geom_point(aes(color=type)) +
+  geom_jitter(data=fit_df%>%filter(!type%in%"modelled"),aes(color=type), size=1) +
   theme_ipsum()+
   ylab("Abundance")+
   xlab("Year")+
@@ -286,7 +314,7 @@ ggsave(here::here("plots", "wolf_effect.png"), width=9, height=5)
 
 
 ##KZ EFFECT
-```{r wolf, fig.height=5, fig.width=11, message=FALSE, warning=FALSE, results='hide'}
+```{r kz effect, fig.height=5, fig.width=11, message=FALSE, warning=FALSE, results='hide'}
 S <- ggs(kz$samples)%>%
   filter(Parameter%in%c("wolf_eff","pen_eff", "wolf_eff_iwolf","pen_eff_iwolf"))
 
@@ -346,8 +374,8 @@ ggsave(here::here("plots", "KZ_effect_and_sim.png"), width=11, height=5)
 
 
 
-##KZ EFFECT
-```{r wolf, results='hide', message=FALSE, warning=FALSE}
+##Wolf vs Pen effect
+```{r Wolf vs Pen effect, results='hide', message=FALSE, warning=FALSE}
 S <- ggs(kz$samples)%>%
   filter(Parameter%in%c("wolf_eff_proportion","pen_eff_proportion"))
 
@@ -400,7 +428,7 @@ gt(summary.l)%>%
 
 
 ##Summarize effect of treatments
-```{r effects, results='asis'}
+```{r effects}
 summary.effect <- tribble(
   ~pop,~period,~lambda.dif, ~lower, ~upper,
 "Klinse-Za","wolf + pen",kz$mean$diff_geom_mean_lambda_post_to_pre, kz$q2.5$diff_geom_mean_lambda_post_to_pre,kz$q97.5$diff_geom_mean_lambda_post_to_pre,

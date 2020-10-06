@@ -267,7 +267,14 @@ out_rnd_eff <- jagsUI::jags(ipm_dat,
 	n.thin = nt,
 	n.adapt = nad)
 
-save(out_rnd_eff, file = here::here("QT", "out_rnd_eff.Rdata"))
+###save output, using piggyback because too large for github, then delete file so it doensn't upload
+Sys.setenv(GITHUB_TOKEN="733161279ee86c587f350521cf9fd11d8450e969")
+save(out_rnd_eff, file = here::here("QT", "qt_out_rnd_eff.Rdata"))
+pb_upload(here::here("QT", "qt_out_rnd_eff.Rdata"), 
+          repo = "ctlamb/KZ_QT_IPM", 
+          tag = "v0.0.1",
+          overwrite=TRUE)
+unlink(here::here("QT", "qt_out_rnd_eff.Rdata"))
 
 ```
 
@@ -391,7 +398,7 @@ ggplot(data=pop_df2%>%
   facet_wrap(vars(param), scales="free_y")+
     geom_vline(xintercept = 2016.5)
 
-ggsave(here::here("plots", "vital_rates.png"), width=8, height=5)
+#ggsave(here::here("plots", "vital_rates.png"), width=8, height=5)
 ```
 
 ##COMPARE TO RAW VITAL RATE DATA
@@ -429,7 +436,7 @@ ggplot(aes(x = yrs, y = estimate, fill=class,ymin=lower, ymax=upper)) +
   facet_wrap(vars(param,pop), scales="free_y")+
     geom_vline(xintercept = 2016.5)
 
-ggsave(here::here("plots", "QT_vital_ratesfit.png"), width=8, height=5)
+#ggsave(here::here("plots", "QT_vital_ratesfit.png"), width=8, height=5)
 
 write_csv(raw.vr, here::here("data", "QT", "vitalrate_validation_QT.csv"))
 ```

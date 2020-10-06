@@ -21,11 +21,12 @@ library(knitr)
 library(gt)
 library(ggallin)
 library(hrbrthemes)
-library(tidyverse)
 library(RColorBrewer)
 library(MCMCvis)
 library(readxl)
+library(piggyback)
 library(here)
+library(tidyverse)
 
 ##define fn
 gm_mean = function(a){prod(a)^(1/length(a))}
@@ -266,11 +267,10 @@ ipm_inits <- function(){
 		list(N = Nst)}
 	
 #  Model parameters to monitor
-model_parms <- c("lambda","logla", "lambdaC", 
+model_parms <- c("lambda","lambdaC", 
 	"totN", "totC", "totP", 
 	"N", "S", "R", 
 	"wolfpen_eff_r", "wolfpen_eff_s",
-	"sa_yr", "ssa_yr", "r_yr", 
 	"totCalves", "totCalvesC", "totCalvesP",
 	"totAdults", "totAdultsC", "totAdultsP",
 	"totAdultsMF", "totCalvesMF", "totNMF",
@@ -281,22 +281,13 @@ model_parms <- c("lambda","logla", "lambdaC",
 	"geom_mean_lambda_postpen_iWolf", "geom_mean_lambda_SimPen_iWolf", "geom_mean_lambda_SimC_iWolf",
 	"simN", "simTotC", "simTotP", "simTotBAU", "simTotCMF", "simTotPMF", "simTotBAUMF",
 	"mean_surv_pre","mean_surv_pen","mean_surv_wolf",
-	"mean_surv_presa1", "mean_surv_presa2",
 	"mean_r_pre","mean_r_pen","mean_r_wolf",
-	"mean_r3_pre","mean_r3_pen","mean_r3_wolf",
-	"mean_r3_C", "mean_r3_P",
 	"wolf_eff_proportion","pen_eff_proportion",
 	"R.sim", "lambdaSimC", "lambdaSimC2","lambdaSimP",
-	"wolf_eff","pen_eff", "wolf_eff_iwolf","pen_eff_iwolf",
-	"tmp1_r3_pre","tmp2_r3_pre", "tmp1_r3_wolf","tmp2_r3_wolf")
+	"wolf_eff","pen_eff", "wolf_eff_iwolf","pen_eff_iwolf")
 
-
-
-
-	
 
 #  Run model with survival and recruitment varying per year
-#  Adjust n.cores for your computer
 out_rnd_eff <- jagsUI::jags(ipm_dat, 
 	inits = ipm_inits,
 	model_parms,
@@ -307,7 +298,15 @@ out_rnd_eff <- jagsUI::jags(ipm_dat,
 	n.thin = nt,
 	n.adapt = nad)
 
-save(out_rnd_eff, file = here::here("KZ", "out_rnd_eff.Rdata"))
+
+###save output, using piggyback because too large for github, then delete file so it doensn't upload
+Sys.setenv(GITHUB_TOKEN="733161279ee86c587f350521cf9fd11d8450e969")
+save(out_rnd_eff, file = here::here("KZ", "kz_out_rnd_eff.Rdata"))
+pb_upload(here::here("KZ", "kz_out_rnd_eff.Rdata"), 
+          repo = "ctlamb/KZ_QT_IPM", 
+          tag = "v0.0.1",
+          overwrite=TRUE)
+unlink(here::here("KZ", "kz_out_rnd_eff.Rdata"))
 ```
 
 
@@ -543,7 +542,7 @@ ggplot(aes(x = yrs, y = estimate, fill=class)) +
     geom_vline(xintercept = 2013.5)+
   geom_vline(xintercept = 2014.5,linetype="dashed")
 
-ggsave(here::here("plots", "KZ_vital_ratesfit.png"), width=8, height=7)
+#ggsave(here::here("plots", "KZ_vital_ratesfit.png"), width=8, height=7)
 
 write_csv(raw.vr, here::here("data", "KZ", "vitalrate_validation_KZ.csv"))
 
