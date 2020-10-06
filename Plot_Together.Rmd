@@ -23,6 +23,7 @@ library(rjags)
 library(MCMCvis)
 library(ggpubr)
 library(readxl)
+library(piggyback)
 library(here)
 
 pb_download("kz_out_rnd_eff.Rdata", 
@@ -450,6 +451,9 @@ gt(summary.effect)%>%
 
 ##Summarize vital rates
 ```{r Plot results-summarise vital rates, results='asis'}
+##define fn
+gm_mean = function(a){prod(a)^(1/length(a))}
+
 summary.s <- tribble(
   ~pop, ~period, ~s, ~s.lower, ~s.upper,
 "Quintette","pre-mgmt",qt$mean$mean_surv_pre, qt$q2.5$mean_surv_pre, qt$q97.5$geom_mean_lambda_pre,
@@ -461,9 +465,9 @@ summary.s <- tribble(
 
 summary.r <- tribble(
   ~pop,~period,~r, ~r.lower, ~r.upper,
-"Quintette","pre-mgmt",qt$mean$mean_r_pre, qt$q2.5$mean_r_pre,qt$q97.5$geom_mean_lambda_pre,
+"Quintette","pre-mgmt",gm_mean(qt$mean$R[2:16]), gm_mean(qt$q2.5$R[2:16]),gm_mean(qt$q97.5$R[2:16]),
 "Quintette","post-mgmt", qt$mean$mean_r_post, qt$q2.5$mean_r_post, qt$q97.5$mean_r_post,
-"Klinse-Za","pre-mgmt",kz$mean$mean_r_pre, kz$q2.5$mean_r_pre,kz$q97.5$geom_mean_lambda_pre,
+"Klinse-Za","pre-mgmt",gm_mean(kz$mean$R[2:19,1]), gm_mean(kz$q2.5$R[2:19,1]),gm_mean(kz$q97.5$R[2:19,1]),
 "Klinse-Za","post-mgmt (wolf+pen)", kz$mean$mean_r_pen, kz$q2.5$mean_r_pen, kz$q97.5$mean_r_pen,
 "Klinse-Za","post-mgmt (wolf)",kz$mean$mean_r_wolf, kz$q2.5$mean_r_wolf, kz$q97.5$mean_r_wolf)
 
