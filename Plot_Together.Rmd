@@ -421,10 +421,7 @@ summary.l <- summary.l%>%
   mutate(`95% CI`=paste(Lamba.Lower,Lambda.Upper, sep="-"))%>%
   select(Herd, Period, Years, Lambda,`95% CI`)
 
-gt(summary.l)%>%
-    tab_header(
-    title = md("Population Growth Rates")
-  ) 
+kable(summary.l, caption="Population Growth Rates")
 ```
 
 
