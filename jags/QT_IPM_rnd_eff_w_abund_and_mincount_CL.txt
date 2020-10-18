@@ -146,6 +146,7 @@ model{
 	
 	for(yr in 2:nyr){
 		lambda[yr] <- (totN[yr] + 0.001)/abs(totN[yr-1] + 0.001)
+		logla[yr] <- log(ifelse(lambda[yr] < 0.0001, 0.01, lambda[yr]))
 		}
 	
 	#  Summarize Lambda
@@ -167,8 +168,18 @@ model{
 	 mean_r3_pre <- mean(R.ad[2:16])
 	 mean_r3_post <- mean(R.ad[17:20])
 
-  
-	
+
+
+################################
+	#Hans geom_lambda formulation	 ##check to make sure we still get the same answer. Yes, identical to prod(X)^(1/length(X)) approach.
+	################################
+	#  Summarize Lambda
+	#geom_mean_lambda_pre_hans <- (exp(1)^sum(logla[2:15]))^(1/(length(logla[2:15])))
+	#geom_mean_lambda_post_hans<- (exp(1)^sum(logla[16:20]))^(1/(length(logla[16:20])))
+	#geom_mean_lambda_post_iwolf_hans <- (exp(1)^sum(logla[17:20]))^(1/(length(logla[17:20])))
+	#diff_geom_mean_lambda_post_to_pre_hans <- geom_mean_lambda_post_hams - geom_mean_lambda_pre_hams
+	#diff_geom_mean_lambda_post_to_pre_iwolf_hans <- geom_mean_lambda_post_iwolf_hams - geom_mean_lambda_pre_hams
+
 	}
 	
 	

@@ -252,17 +252,21 @@ out_rnd_eff <- jagsUI::jags(ipm_dat,
 	n.adapt = nad)
 
 ###save output, using piggyback because too large for github, then delete file so it doesn't upload
-##need a github token
-##get yours here:
-# browse_github_pat(
-#   scopes = c("repo", "gist"),
-#   description = "for_KZ_IPM",
-#   host = "https://github.com"
-# )
+# ##need a github token
+# ##get yours here:
+# browse_github_pat()
 # github_token()
-#Sys.setenv(GITHUB_TOKEN="2e5fbd99d3b5e49ccd76aff65105bd68e3653825")
-
-
+# ##Add to your r environ 
+#  
+# ##bring up R envir using this command below
+# edit_r_environ()
+# 
+# #add this line
+# GITHUB_TOKEN="***ADD TOKEN HERE***"
+#
+#
+###OR for 1 time use add it here and run
+#Sys.setenv(GITHUB_TOKEN="***ADD TOKEN HERE***")
 
 save(out_rnd_eff, file = here::here("QT", "qt_out_rnd_eff.Rdata"))
 pb_upload(here::here("QT", "qt_out_rnd_eff.Rdata"), 
