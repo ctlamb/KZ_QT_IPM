@@ -1,7 +1,7 @@
 KZ and QT IPM results
 ================
 Sara Williams, Hans Martin, and Clayton Lamb
-06 October, 2020
+17 October, 2020
 
 \#See folders KZ and QT for the IPM’s for each herd
 
@@ -106,6 +106,7 @@ ggplot(res_df,aes(x = yrs, y = est, ymin=q2.5, ymax=q97.5, fill=herd)) +
 
 ``` r
 ggsave(here::here("plots", "abundance_MF.png"), width=8, height=5)
+write_csv(res_df, here::here("tables", "abundance_MF.csv"))
 ```
 
 \#\#ABUNDANCE FIT
@@ -459,11 +460,11 @@ kable(summary.effect)
 
 | pop       | period     | lambda.dif |   lower | upper |
 | :-------- | :--------- | ---------: | ------: | ----: |
-| Klinse-Za | wolf + pen |      0.180 |   0.153 | 0.207 |
-| Klinse-Za | wolf       |      0.095 |   0.027 | 0.160 |
-| Klinse-Za | pen        |      0.085 |   0.026 | 0.149 |
-| Quintette | wolf       |      0.071 | \-0.038 | 0.179 |
-| Quintette | iwolf      |      0.138 |   0.047 | 0.226 |
+| Klinse-Za | wolf + pen |      0.180 |   0.154 | 0.207 |
+| Klinse-Za | wolf       |      0.080 |   0.016 | 0.147 |
+| Klinse-Za | pen        |      0.100 |   0.038 | 0.162 |
+| Quintette | wolf       |      0.072 | \-0.035 | 0.179 |
+| Quintette | iwolf      |      0.138 |   0.049 | 0.227 |
 
 \#\#Summarize vital rates
 
@@ -482,17 +483,27 @@ summary.s <- tribble(
 
 summary.r <- tribble(
   ~pop,~period,~r, ~r.lower, ~r.upper,
-"Quintette","pre-mgmt",gm_mean(qt$mean$R[2:16]), gm_mean(qt$q2.5$R[2:16]),gm_mean(qt$q97.5$R[2:16]),
+"Quintette","pre-mgmt",qt$mean$mean_r_pre, qt$q2.5$mean_r_pre, qt$q97.5$mean_r_pre,
 "Quintette","post-mgmt", qt$mean$mean_r_post, qt$q2.5$mean_r_post, qt$q97.5$mean_r_post,
-"Klinse-Za","pre-mgmt",gm_mean(kz$mean$R[2:19,1]), gm_mean(kz$q2.5$R[2:19,1]),gm_mean(kz$q97.5$R[2:19,1]),
+"Klinse-Za","pre-mgmt",kz$mean$mean_r_pre, kz$q2.5$mean_r_pre, kz$q97.5$mean_r_pre,
 "Klinse-Za","post-mgmt (wolf+pen)", kz$mean$mean_r_pen, kz$q2.5$mean_r_pen, kz$q97.5$mean_r_pen,
 "Klinse-Za","post-mgmt (wolf)",kz$mean$mean_r_wolf, kz$q2.5$mean_r_wolf, kz$q97.5$mean_r_wolf)
 
+summary.r3 <- tribble(
+  ~pop,~period,~r.ad, ~r.ad.lower, ~r.ad.upper,
+"Quintette","pre-mgmt",qt$mean$mean_r3_pre, qt$q2.5$mean_r3_pre, qt$q97.5$mean_r3_pre,
+"Quintette","post-mgmt", qt$mean$mean_r3_post, qt$q2.5$mean_r3_post, qt$q97.5$mean_r3_post,
+"Klinse-Za","pre-mgmt",kz$mean$mean_r3_pre, kz$q2.5$mean_r3_pre, kz$q97.5$mean_r3_pre,
+"Klinse-Za","post-mgmt (wolf+pen)", kz$mean$mean_r3_pen, kz$q2.5$mean_r3_pen, kz$q97.5$mean_r3_pen,
+"Klinse-Za","post-mgmt (wolf)",kz$mean$mean_r3_wolf, kz$q2.5$mean_r3_wolf, kz$q97.5$mean_r3_wolf)
+
 summary.vr <- summary.s%>%
   left_join(summary.r)%>%
+  left_join(summary.r3)%>%
   mutate_if(is.numeric,function(x) round(x,2))
 ```
 
+    ## Joining, by = c("pop", "period")
     ## Joining, by = c("pop", "period")
 
 ``` r
@@ -500,22 +511,23 @@ summary.vr$Years <- c("2002-2015", "2016-2020", "1995-2012", "2014-2020", "2013-
 
 summary.vr <- summary.vr%>%
   mutate(`s 95% CI`=paste(s.lower,s.upper, sep="-"),
-         `r 95% CI`=paste(r.lower,r.upper, sep="-"))%>%
-  dplyr::select(pop, period,Years, s,`s 95% CI`, r,`r 95% CI`)
+         `r 95% CI`=paste(r.lower,r.upper, sep="-"),
+         `r.ad 95% CI`=paste(r.ad.lower,r.ad.upper, sep="-"))%>%
+  select(pop, period, Years, s,`s 95% CI`, r,`r 95% CI`,r.ad,`r.ad 95% CI`)
 
 
 
-colnames(summary.vr) <- c("Group", "Period", "Years", "AF Survival","95% CI", "Recruitment","r95% CI")
+colnames(summary.vr) <- c("Group", "Period", "Years", "AF Survival","95% CI", "Recruitment","r95% CI", "Recruitment-Adult Only","r.ad.95% CI")
 
 
 write_csv(summary.vr,here::here("tables", "vital_rates.csv"))
 kable(summary.vr)
 ```
 
-| Group     | Period               | Years     | AF Survival | 95% CI    | Recruitment | r95% CI   |
-| :-------- | :------------------- | :-------- | ----------: | :-------- | ----------: | :-------- |
-| Quintette | pre-mgmt             | 2002-2015 |        0.84 | 0.81-0.97 |        0.12 | 0.07-0.17 |
-| Quintette | post-mgmt            | 2016-2020 |        0.90 | 0.86-0.94 |        0.18 | 0.14-0.21 |
-| Klinse-Za | pre-mgmt             | 1995-2012 |        0.74 | 0.71-0.89 |        0.21 | 0.12-0.32 |
-| Klinse-Za | post-mgmt (wolf+pen) | 2014-2020 |        0.91 | 0.91-0.91 |        0.24 | 0.24-0.24 |
-| Klinse-Za | post-mgmt (wolf)     | 2013-2020 |        0.85 | 0.79-0.91 |        0.21 | 0.17-0.25 |
+| Group     | Period               | Years     | AF Survival | 95% CI    | Recruitment | r95% CI   | Recruitment-Adult Only | r.ad.95% CI |
+| :-------- | :------------------- | :-------- | ----------: | :-------- | ----------: | :-------- | ---------------------: | :---------- |
+| Quintette | pre-mgmt             | 2002-2015 |        0.84 | 0.81-0.97 |        0.13 | 0.11-0.14 |                   0.12 | 0.1-0.14    |
+| Quintette | post-mgmt            | 2016-2020 |        0.90 | 0.86-0.94 |        0.18 | 0.15-0.22 |                   0.20 | 0.14-0.26   |
+| Klinse-Za | pre-mgmt             | 1995-2012 |        0.79 | 0.76-0.89 |        0.12 | 0.1-0.13  |                   0.12 | 0.1-0.14    |
+| Klinse-Za | post-mgmt (wolf+pen) | 2014-2020 |        0.91 | 0.91-0.91 |        0.24 | 0.24-0.24 |                   0.30 | 0.3-0.3     |
+| Klinse-Za | post-mgmt (wolf)     | 2013-2020 |        0.85 | 0.79-0.91 |        0.12 | 0.1-0.14  |                   0.14 | 0.11-0.16   |

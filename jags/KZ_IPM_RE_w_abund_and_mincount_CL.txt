@@ -105,7 +105,7 @@ model{
 		#WARNING! DOUBLE CHECK THAT THE RECRUITMENT PARAMETER IS FOR FEMALES PER FEMALE. 
 		#ALSO, CONFIRM THAT THIS IS A PER CAPITA VS ADULT RECRUITMENT RATE.
 		####################################################
-		nMu[yr,1,1] <- totAdultsC[yr] * R[yr,1] 
+		nMu[yr,1,1] <- ((N[yr-1,1,1] * S[yr-1,1]) + (totAdultsC[yr-1] * S[yr-1,1])) * R[yr,1] 
 		N[yr,1,1] ~ dnorm(nMu[yr,1,1], 1/abs(nMu[yr,1,1]))
 		N[yr,1,2] <- nPenC[yr] 
 		
@@ -235,10 +235,16 @@ for(yr in 2:nyr){
 	 mean_surv_pen <- prod(S[20:25,2])^(1/length(S[20:25,2]))
 	 mean_surv_wolf <- prod(S[19:25,1])^(1/length(S[19:25,1]))
 
-	 mean_r_pre <- prod(R[2:19,1])^(1/length(R[2:19,1]))
-	 mean_r_pen <- prod(R[21:26,2])^(1/length(R[21:26,2]))
-	 mean_r_wolf <- prod(R[20:26,1])^(1/length(R[20:26,1]))
+##have to use mean here as opposed to geo mean due to derived parameter that goes slightly negative at times at lower CI and causes issues.
+	 mean_r_pre <- mean(R[2:19,1])
+	 mean_r_pen <- mean(R[21:26,2])
+	 mean_r_wolf <- mean(R[20:26,1])
 
+	 mean_r3_pre <- mean(R.ad[2:19,1])
+	 mean_r3_pen <- mean(R.sim[21:26,2])
+	 mean_r3_wolf <- mean(R.ad[20:26,1])
+
+  
 
 	
 	# ##pen vs wolf control effects
@@ -264,6 +270,10 @@ for(yr in 2:nyr){
 		
 	 for(yr in 20:nyr){
 		 R.sim[yr,1] <- N[yr,1,1] /(N[yr-1,3,1]*S[yr-1,1])
+		 }
+		 
+	for(yr in 2:nyr){
+     R.ad[yr,1] <- N[yr,1,1] /((N[yr-1,1,1] + N[yr-1,2,1] + N[yr-1,3,1]) * S[yr-1,1])
 		 }
 		
 

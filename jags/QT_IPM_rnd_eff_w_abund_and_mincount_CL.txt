@@ -89,6 +89,10 @@ model{
 		totCalvesMF[yr] <- totCalves[yr]/0.5
 		totNMF[yr] <- totAdultsMF[yr] + totCalvesMF[yr] 
 		
+		# derive adult only recruitment
+    R.ad[yr] <- N[yr,1,1] /((N[yr-1,1,1] + N[yr-1,2,1] + N[yr-1,3,1]) * S[yr-1])
+		
+		
 		}
 		
 
@@ -156,8 +160,14 @@ model{
 	mean_surv_pre <- prod(S[1:15])^(1/length(S[1:15]))
 	mean_surv_post <- prod(S[16:19])^(1/length(S[16:19]))
 
-	mean_r_pre <- prod(R[2:16])^(1/length(R[2:16]))
-	mean_r_post <- prod(R[17:20])^(1/length(R[17:20]))
+	##have to use mean here as opposed to geo mean due to derived parameter that goes slightly negative at times at lower CI and causes issues.
+	 mean_r_pre <- mean(R[2:16])
+	 mean_r_post <- mean(R[17:20])
+
+	 mean_r3_pre <- mean(R.ad[2:16])
+	 mean_r3_post <- mean(R.ad[17:20])
+
+  
 	
 	}
 	

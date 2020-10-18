@@ -108,6 +108,7 @@ ggplot(res_df,aes(x = yrs, y = est, ymin=q2.5, ymax=q97.5, fill=herd)) +
 
 
 ggsave(here::here("plots", "abundance_MF.png"), width=8, height=5)
+write_csv(res_df, here::here("tables", "abundance_MF.csv"))
 ```
 
 
@@ -458,14 +459,23 @@ summary.s <- tribble(
 
 summary.r <- tribble(
   ~pop,~period,~r, ~r.lower, ~r.upper,
-"Quintette","pre-mgmt",gm_mean(qt$mean$R[2:16]), gm_mean(qt$q2.5$R[2:16]),gm_mean(qt$q97.5$R[2:16]),
+"Quintette","pre-mgmt",qt$mean$mean_r_pre, qt$q2.5$mean_r_pre, qt$q97.5$mean_r_pre,
 "Quintette","post-mgmt", qt$mean$mean_r_post, qt$q2.5$mean_r_post, qt$q97.5$mean_r_post,
-"Klinse-Za","pre-mgmt",gm_mean(kz$mean$R[2:19,1]), gm_mean(kz$q2.5$R[2:19,1]),gm_mean(kz$q97.5$R[2:19,1]),
+"Klinse-Za","pre-mgmt",kz$mean$mean_r_pre, kz$q2.5$mean_r_pre, kz$q97.5$mean_r_pre,
 "Klinse-Za","post-mgmt (wolf+pen)", kz$mean$mean_r_pen, kz$q2.5$mean_r_pen, kz$q97.5$mean_r_pen,
 "Klinse-Za","post-mgmt (wolf)",kz$mean$mean_r_wolf, kz$q2.5$mean_r_wolf, kz$q97.5$mean_r_wolf)
 
+summary.r3 <- tribble(
+  ~pop,~period,~r.ad, ~r.ad.lower, ~r.ad.upper,
+"Quintette","pre-mgmt",qt$mean$mean_r3_pre, qt$q2.5$mean_r3_pre, qt$q97.5$mean_r3_pre,
+"Quintette","post-mgmt", qt$mean$mean_r3_post, qt$q2.5$mean_r3_post, qt$q97.5$mean_r3_post,
+"Klinse-Za","pre-mgmt",kz$mean$mean_r3_pre, kz$q2.5$mean_r3_pre, kz$q97.5$mean_r3_pre,
+"Klinse-Za","post-mgmt (wolf+pen)", kz$mean$mean_r3_pen, kz$q2.5$mean_r3_pen, kz$q97.5$mean_r3_pen,
+"Klinse-Za","post-mgmt (wolf)",kz$mean$mean_r3_wolf, kz$q2.5$mean_r3_wolf, kz$q97.5$mean_r3_wolf)
+
 summary.vr <- summary.s%>%
   left_join(summary.r)%>%
+  left_join(summary.r3)%>%
   mutate_if(is.numeric,function(x) round(x,2))
 
 
@@ -473,12 +483,13 @@ summary.vr$Years <- c("2002-2015", "2016-2020", "1995-2012", "2014-2020", "2013-
 
 summary.vr <- summary.vr%>%
   mutate(`s 95% CI`=paste(s.lower,s.upper, sep="-"),
-         `r 95% CI`=paste(r.lower,r.upper, sep="-"))%>%
-  dplyr::select(pop, period,Years, s,`s 95% CI`, r,`r 95% CI`)
+         `r 95% CI`=paste(r.lower,r.upper, sep="-"),
+         `r.ad 95% CI`=paste(r.ad.lower,r.ad.upper, sep="-"))%>%
+  select(pop, period, Years, s,`s 95% CI`, r,`r 95% CI`,r.ad,`r.ad 95% CI`)
 
 
 
-colnames(summary.vr) <- c("Group", "Period", "Years", "AF Survival","95% CI", "Recruitment","r95% CI")
+colnames(summary.vr) <- c("Group", "Period", "Years", "AF Survival","95% CI", "Recruitment","r95% CI", "Recruitment-Adult Only","r.ad.95% CI")
 
 
 write_csv(summary.vr,here::here("tables", "vital_rates.csv"))

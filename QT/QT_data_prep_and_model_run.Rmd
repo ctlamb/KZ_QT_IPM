@@ -248,7 +248,8 @@ model_parms <- c("lambda","logla",
 	"diff_geom_mean_lambda_post_to_pre","diff_geom_mean_lambda_post_to_pre_iwolf",
 	"geom_mean_lambda_post_iwolf",
 	"mean_surv_pre", "mean_surv_post",
-	"mean_r_pre", "mean_r_post")
+	"mean_r_pre", "mean_r_post",
+	"mean_r3_pre", "mean_r3_post")
 
 
 nt <- 3
@@ -267,8 +268,19 @@ out_rnd_eff <- jagsUI::jags(ipm_dat,
 	n.thin = nt,
 	n.adapt = nad)
 
-###save output, using piggyback because too large for github, then delete file so it doensn't upload
-Sys.setenv(GITHUB_TOKEN="733161279ee86c587f350521cf9fd11d8450e969")
+###save output, using piggyback because too large for github, then delete file so it doesn't upload
+##need a github token
+##get yours here:
+# browse_github_pat(
+#   scopes = c("repo", "gist"),
+#   description = "for_KZ_IPM",
+#   host = "https://github.com"
+# )
+# github_token()
+#Sys.setenv(GITHUB_TOKEN="2e5fbd99d3b5e49ccd76aff65105bd68e3653825")
+
+
+
 save(out_rnd_eff, file = here::here("QT", "qt_out_rnd_eff.Rdata"))
 pb_upload(here::here("QT", "qt_out_rnd_eff.Rdata"), 
           repo = "ctlamb/KZ_QT_IPM", 
@@ -492,25 +504,31 @@ summary.s <- tribble(
 
 summary.r <- tribble(
   ~pop,~r, ~r.lower, ~r.upper,
-"pre-mgmt",out_rnd_eff$mean$mean_r_pre, out_rnd_eff$q2.5$mean_r_pre,out_rnd_eff$q97.5$geom_mean_lambda_pre,
+"pre-mgmt",out_rnd_eff$mean$mean_r_pre, out_rnd_eff$q2.5$mean_r_pre, out_rnd_eff$q97.5$mean_r_pre,
 "post-mgmt", out_rnd_eff$mean$mean_r_post, out_rnd_eff$q2.5$mean_r_post, out_rnd_eff$q97.5$mean_r_post)
+
+summary.r3 <- tribble(
+  ~pop,~r.ad, ~r.ad.lower, ~r.ad.upper,
+"pre-mgmt", out_rnd_eff$mean$mean_r3_pre, out_rnd_eff$q2.5$mean_r3_pre, out_rnd_eff$q97.5$mean_r3_pre,
+"post-mgmt", out_rnd_eff$mean$mean_r3_post, out_rnd_eff$q2.5$mean_r3_post, out_rnd_eff$q97.5$mean_r3_post)
 
 summary.vr <- summary.s%>%
   left_join(summary.r)%>%
   mutate_if(is.numeric,function(x) round(x,2))
 
 
+summary.vr <- summary.s%>%
+  left_join(summary.r)%>%
+  left_join(summary.r3)%>%
+  mutate_if(is.numeric,function(x) round(x,2))
+
 summary.vr$Years <- c("2002-2015", "2016-2020")
 
 summary.vr <- summary.vr%>%
   mutate(`s 95% CI`=paste(s.lower,s.upper, sep="-"),
-         `r 95% CI`=paste(r.lower,r.upper, sep="-"))%>%
-  dplyr::select(pop, Years, s,`s 95% CI`, r,`r 95% CI`)
-
-
-
-colnames(summary.vr) <- c("Group", "Years", "AF Survival","95% CI", "Recruitment","r95% CI")
-
+         `r 95% CI`=paste(r.lower,r.upper, sep="-"),
+         `r.ad 95% CI`=paste(r.ad.lower,r.ad.upper, sep="-"))%>%
+  select(pop, Years, s,`s 95% CI`, r,`r 95% CI`,r.ad,`r.ad 95% CI`)
 
 gt(summary.vr)%>%
   tab_header(
