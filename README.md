@@ -1,7 +1,7 @@
 KZ and QT IPM results
 ================
 Sara Williams, Hans Martin, and Clayton Lamb
-17 October, 2020
+25 October, 2020
 
 \#See folders KZ and QT for the IPM’s for each herd
 
@@ -461,10 +461,10 @@ kable(summary.effect)
 | pop       | period     | lambda.dif |   lower | upper |
 | :-------- | :--------- | ---------: | ------: | ----: |
 | Klinse-Za | wolf + pen |      0.180 |   0.154 | 0.207 |
-| Klinse-Za | wolf       |      0.080 |   0.016 | 0.147 |
+| Klinse-Za | wolf       |      0.080 |   0.017 | 0.147 |
 | Klinse-Za | pen        |      0.100 |   0.038 | 0.162 |
-| Quintette | wolf       |      0.072 | \-0.035 | 0.179 |
-| Quintette | iwolf      |      0.138 |   0.049 | 0.227 |
+| Quintette | wolf       |      0.073 | \-0.036 | 0.182 |
+| Quintette | iwolf      |      0.139 |   0.048 | 0.228 |
 
 \#\#Summarize vital rates
 
@@ -530,4 +530,4 @@ kable(summary.vr)
 | Quintette | post-mgmt            | 2016-2020 |        0.90 | 0.86-0.94 |        0.18 | 0.15-0.22 |                   0.20 | 0.14-0.26   |
 | Klinse-Za | pre-mgmt             | 1995-2012 |        0.79 | 0.76-0.89 |        0.12 | 0.1-0.13  |                   0.12 | 0.1-0.14    |
 | Klinse-Za | post-mgmt (wolf+pen) | 2014-2020 |        0.91 | 0.91-0.91 |        0.24 | 0.24-0.24 |                   0.30 | 0.3-0.3     |
-| Klinse-Za | post-mgmt (wolf)     | 2013-2020 |        0.85 | 0.79-0.91 |        0.12 | 0.1-0.14  |                   0.14 | 0.11-0.16   |
+| Klinse-Za | post-mgmt (wolf)     | 2013-2020 |        0.85 | 0.79-0.9  |        0.12 | 0.1-0.14  |                   0.14 | 0.11-0.16   |
