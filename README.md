@@ -1,7 +1,7 @@
 KZ and QT IPM results
 ================
 Sara Williams, Hans Martin, and Clayton Lamb
-25 October, 2020
+26 October, 2020
 
 \#See folders KZ and QT for the IPM’s for each herd
 

@@ -115,7 +115,7 @@ write_csv(res_df, here::here("tables", "abundance_MF.csv"))
 
 
 ##ABUNDANCE FIT
-```{r Plot results-abundance fit, results='hide', message=FALSE, warning=FALSE}
+```{r Plot results-abundance fit, fig.height=5, fig.width=9, message=FALSE, warning=FALSE, results='hide'}
 fit_df <- res_df%>%
   mutate(type="modelled")%>%
   rbind(data.frame(kz_yr_df,
@@ -182,7 +182,7 @@ ggsave(here::here("plots", "abundancefit_MF.png"), width=9, height=5)
 
 
 ##VITAL RATES
-```{r Plot results-vital rates,  message=FALSE, warning=FALSE, results='hide'}
+```{r Plot results-vital rates,  message=FALSE, warning=FALSE, results='hide',fig.height=5, fig.width=9}
 #R
 pop_df_r <- rbind(
                   data.frame(estimate=c(
@@ -254,7 +254,7 @@ ggplot(mod_vr,
 
 
 ##COMPARE TO RAW VITAL RATE DATA
-```{r Plot results-vital rates vs raw data, results='hide', message=FALSE, warning=FALSE}
+```{r Plot results-vital rates vs raw data, fig.height=5, fig.width=9, results='hide', message=FALSE, warning=FALSE}
 kz_vr%>%mutate(pop=case_when(pop%in%"Free"~"KZ-Wolf",
                              pop%in%"Pen"~"KZ-Wolf + Pen"))%>%
   rbind(qt_vr%>%mutate(pop=case_when(pop%in%"Free"~"QT-Wolf")))%>%
@@ -275,7 +275,7 @@ ggsave(here::here("plots", "vitalratefit_F.png"), width=9, height=5)
 
 
 ##WOLF EFFECT
-```{r wolf, results='hide', message=FALSE, warning=FALSE}
+```{r wolf, results='hide',fig.height=5, fig.width=9, message=FALSE, warning=FALSE}
 ##Intense Wolf Control== (2017-2020)
 
 
@@ -377,7 +377,7 @@ ggsave(here::here("plots", "KZ_effect_and_sim.png"), width=11, height=5)
 
 
 ##Wolf vs Pen effect
-```{r Wolf vs Pen effect, results='hide', message=FALSE, warning=FALSE}
+```{r Wolf vs Pen effect, fig.height=5, fig.width=7,results='hide', message=FALSE, warning=FALSE}
 S <- ggs(kz$samples)%>%
   filter(Parameter%in%c("wolf_eff_proportion","pen_eff_proportion"))
 
