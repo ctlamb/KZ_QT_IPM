@@ -1,7 +1,7 @@
 KZ and QT IPM results
 ================
 Sara Williams, Hans Martin, and Clayton Lamb
-26 October, 2020
+31 October, 2020
 
 \#See folders KZ and QT for the IPM’s for each herd
 
@@ -20,6 +20,7 @@ library(MCMCvis)
 library(ggpubr)
 library(readxl)
 library(piggyback)
+library(tidybayes)
 library(here)
 
 pb_download("kz_out_rnd_eff.Rdata", 
@@ -59,30 +60,38 @@ kz_count_dat <- read_xlsx(here::here("data", "KZ", "Count_summary_KZ.xlsx"))
 ##raw vital rates
 qt_vr <- read_csv(here::here("data", "QT", "vitalrate_validation_QT.csv"))
 kz_vr <- read_csv(here::here("data", "KZ", "vitalrate_validation_KZ.csv"))
+
+##set CrI
+cri<-0.9
 ```
 
 \#\#ABUNDANCE
 
 ``` r
-res_df <- data.frame(kz_yr_df,
-                     est=c(kz$mean$totNMF),
-                     q2.5=c(kz$q2.5$totNMF),
-                     q97.5=c(kz$q97.5$totNMF),
+res_df <- kz %>%
+          spread_draws(totNMF[i]) %>%
+          median_qi(.width = cri)%>%
+                     mutate(
                      param="Total M+F",
                      herd="Klinse-Za")%>%
+  cbind(kz_yr_df)%>%
   rbind(
-    data.frame(qt_yr_df,
-                     est=c(qt$mean$totNMF),
-                     q2.5=c(qt$q2.5$totNMF),
-                     q97.5=c(qt$q97.5$totNMF),
+    qt %>%
+          spread_draws(totNMF[i]) %>%
+          median_qi(.width = cri)%>%
+                     mutate(
                      param="Total M+F",
-                     herd="Quintette")
+                     herd="Quintette")%>%
+      cbind(qt_yr_df))%>%
+  rename("lower" = ".lower",
+         "upper" = ".upper",
+         "est"="totNMF")%>%
+  select(est,lower,upper,param,herd,yrs, yr_idx)
     
-  )
+  
 
-#res_df <- res_df[-(nyr+1),]
 
-ggplot(res_df,aes(x = yrs, y = est, ymin=q2.5, ymax=q97.5, fill=herd)) +
+ggplot(res_df,aes(x = yrs, y = est, ymin=lower, ymax=upper, fill=herd)) +
   #geom_cloud(steps=50, max_alpha = 1,se_mult=1.96)+
   geom_ribbon(alpha=0.4)+
   geom_line() +
@@ -114,45 +123,49 @@ write_csv(res_df, here::here("tables", "abundance_MF.csv"))
 ``` r
 fit_df <- res_df%>%
   mutate(type="modelled")%>%
-  rbind(data.frame(kz_yr_df,
-                     est=kz_count_dat$Estimate_ADULTMF + kz_count_dat$Estimate_CALFMF,
-                     q2.5=NA,
-                     q97.5=NA,
+  #bind on observed data
+  ##Estimates
+  rbind(
+    data.frame(est=kz_count_dat$Estimate_ADULTMF + kz_count_dat$Estimate_CALFMF,
+                     lower=NA,
+                     upper=NA,
                      param="Total M+F",
                      herd="Klinse-Za",
-                     type="Observed_Estimate")%>%
-  rbind(
-     data.frame(qt_yr_df,
-                     est=qt_count_dat$Estimate_ADULTMF + qt_count_dat$Estimate_CALFMF,
-                     q2.5=NA,
-                     q97.5=NA,
-                     param="Total M+F",
-                     herd="Quintette",
+                     kz_yr_df,
                      type="Observed_Estimate")
-    
-  )%>%
-    rbind(data.frame(kz_yr_df,
-                     est=kz_count_dat$`KZ total count_MAX`,
-                     q2.5=NA,
-                     q97.5=NA,
-                     param="Total M+F",
-                     herd="Klinse-Za",
-                     type="Observed_Mincount"))%>%
+    )%>%
   rbind(
-     data.frame(qt_yr_df,
-                     est=qt_count_dat$MinCount_ADULTMF + qt_count_dat$MinCount_CALFMF, 
-                     q2.5=NA,
-                     q97.5=NA,
+     data.frame(est=qt_count_dat$Estimate_ADULTMF + qt_count_dat$Estimate_CALFMF,
+                     lower=NA,
+                     upper=NA,
                      param="Total M+F",
                      herd="Quintette",
+                     qt_yr_df,
+                     type="Observed_Estimate")
+  )%>%
+  ##Mincounts
+    rbind(
+          data.frame(est=kz_count_dat$`KZ total count_MAX`,
+                     lower=NA,
+                     upper=NA,
+                     param="Total M+F",
+                     herd="Klinse-Za",
+                     kz_yr_df,
                      type="Observed_Mincount")
-    
+          )%>%
+  rbind(
+        data.frame(est=qt_count_dat$MinCount_ADULTMF + qt_count_dat$MinCount_CALFMF,
+                     lower=NA,
+                     upper=NA,
+                     param="Total M+F",
+                     herd="Quintette",
+                     qt_yr_df,
+                     type="Observed_Mincount")
   )
-)
 
-#res_df <- res_df[-(nyr+1),]
 
-ggplot(data=fit_df%>%filter(type%in%"modelled"), aes(x = yrs, y = est, ymin=q2.5, ymax=q97.5, fill=type)) +
+
+ggplot(data=fit_df%>%filter(type%in%"modelled"), aes(x = yrs, y = est, ymin=lower, ymax=upper, fill=type)) +
   #geom_cloud(steps=20, max_alpha = 1,se_mult=1.96)+
   geom_ribbon(alpha=0.4)+
   geom_line(aes(color=type)) +
@@ -181,65 +194,88 @@ ggsave(here::here("plots", "abundancefit_MF.png"), width=9, height=5)
 
 ``` r
 #R
+
 pop_df_r <- rbind(
-                  data.frame(estimate=c(
-                                  kz$mean$totCalvesP/kz$mean$totAdultsP),
-                       lower=c(
-                                  kz$q2.5$totCalvesP/kz$q2.5$totAdultsP),
-                       upper=c(
-                                  kz$q97.5$totCalvesP/kz$q97.5$totAdultsP),
-                       pop=rep(c("KZ-Wolf + Pen"), each=length(kz$mean$R)),
-                       param="Recruitment",
-                       yrs=rep(kz_yr_df$yrs, times=1)),
-                  
-                    data.frame(estimate=c(
-                                  kz$mean$R[,1]),
-                       lower=c(
-                                  kz$q2.5$R[,1]),
-                       upper=c(
-                                  kz$q97.5$R[,1]),
-                       pop=rep(c("KZ-Wolf"), each=length(kz$mean$R)),
-                       param="Recruitment",
-                       yrs=rep(kz_yr_df$yrs, times=1)),
-                  
-                  data.frame(estimate=qt$mean$R,
-                       lower=qt$q2.5$R,
-                       upper=qt$q97.5$R,
-                       pop=rep(c("QT-Wolf"), each=length(qt$mean$R)),
-                       param="Recruitment",
-                       yrs=rep(qt_yr_df$yrs, times=1)))%>%
-  mutate(lower=case_when(lower<0~0,
-                         TRUE~lower))
+kz %>%
+  spread_draws(R[i,j]) %>%
+  median_qi(.width = cri)%>%
+  filter(j==2)%>%
+  mutate(
+    param="Recruitment",
+    pop="KZ-Wolf + Pen")%>%
+  left_join(kz_yr_df%>%rename(i=yr_idx))%>%
+  ungroup()%>%
+  select(est=R, lower=`.lower`, upper=`.upper`,param,pop,yrs),
+
+kz %>%
+  spread_draws(R[i,j]) %>%
+  median_qi(.width = cri)%>%
+  filter(j==1)%>%
+  mutate(
+    param="Recruitment",
+    pop="KZ-Wolf")%>%
+  left_join(kz_yr_df%>%rename(i=yr_idx))%>%
+  ungroup()%>%
+  select(est=R, lower=`.lower`, upper=`.upper`,param,pop,yrs),
+
+qt %>%
+  spread_draws(R[i]) %>%
+  median_qi(.width = cri)%>%
+  mutate(
+    param="Recruitment",
+    pop="QT-Wolf")%>%
+  left_join(qt_yr_df%>%rename(i=yr_idx))%>%
+  ungroup()%>%
+  select(est=R, lower=`.lower`, upper=`.upper`,param,pop,yrs)
+)
 
 #S
-pop_df_s <- data.frame(estimate=c(kz$mean$S[,1],
-                                  kz$mean$S[,2]),
-                       lower=c(kz$q2.5$S[,1],
-                               kz$q2.5$S[,2]),
-                       upper=c(kz$q97.5$S[,1],
-                               kz$q97.5$S[,2]),
-                       pop=rep(c("KZ-Wolf", "KZ-Wolf + Pen"), each=length(kz$mean$S)/2),
-                       param="Survival",
-                       yrs=rep(kz_yr_df$yrs, times=2))%>%
-  rbind(
-    data.frame(estimate=c(qt$mean$S),
-                       lower=c(qt$q2.5$S),
-                       upper=c(qt$q97.5$S),
-                       pop="QT-Wolf",
-                       param="Survival",
-                       yrs=qt_yr_df$yrs)
-  )
+pop_df_s <- rbind(
+  kz %>%
+  spread_draws(S[i,j]) %>%
+  median_qi(.width = cri)%>%
+  filter(j==2)%>%
+  mutate(
+    param="Survival",
+    pop="KZ-Wolf + Pen")%>%
+  left_join(kz_yr_df%>%rename(i=yr_idx))%>%
+  ungroup()%>%
+  select(est=S, lower=`.lower`, upper=`.upper`,param,pop,yrs),
+
+kz %>%
+  spread_draws(S[i,j]) %>%
+  median_qi(.width = cri)%>%
+  filter(j==1)%>%
+  mutate(
+    param="Survival",
+    pop="KZ-Wolf")%>%
+  left_join(kz_yr_df%>%rename(i=yr_idx))%>%
+  ungroup()%>%
+  select(est=S, lower=`.lower`, upper=`.upper`,param,pop,yrs),
+
+qt %>%
+  spread_draws(S[i]) %>%
+  median_qi(.width = cri)%>%
+  mutate(
+    param="Survival",
+    pop="QT-Wolf")%>%
+  left_join(qt_yr_df%>%rename(i=yr_idx))%>%
+  ungroup()%>%
+  select(est=S, lower=`.lower`, upper=`.upper`,param,pop,yrs)
+)
+
 
 
 
 mod_vr <- rbind(pop_df_r, pop_df_s)%>%
          filter(yrs>1995)%>%
-         mutate(estimate=case_when(param=="Recruitment" & yrs<=2015 & pop=="KZ-Wolf + Pen"~NA_real_, 
+         mutate(est=case_when(param=="Recruitment" & yrs<=2015 & pop=="KZ-Wolf + Pen"~NA_real_, 
                                    param=="Survival" & yrs<=2014 & pop=="KZ-Wolf + Pen"~NA_real_, 
-                                   TRUE~estimate))
+                                   TRUE~est))%>%
+  mutate(type="Modelled")
 
 ggplot(mod_vr,
-       aes(x = yrs, y = estimate, fill=pop,ymin=lower, ymax=upper)) +
+       aes(x = yrs, y = est, fill=pop,ymin=lower, ymax=upper)) +
   geom_line(aes(color=pop)) +
   geom_ribbon(alpha=0.4)+
   theme_ipsum()+
@@ -258,8 +294,11 @@ kz_vr%>%mutate(pop=case_when(pop%in%"Free"~"KZ-Wolf",
                              pop%in%"Pen"~"KZ-Wolf + Pen"))%>%
   rbind(qt_vr%>%mutate(pop=case_when(pop%in%"Free"~"QT-Wolf")))%>%
   mutate(type="Observed")%>%
-  rbind(mod_vr%>%mutate(type="Modelled"))%>%
-  ggplot(aes(x = yrs, y = estimate, fill=type, ymin=lower, ymax=upper)) +
+  rename(est=estimate)%>%
+  select(colnames(mod_vr))%>%
+  rbind(mod_vr)%>%
+
+  ggplot(aes(x = yrs, y = est, fill=type, ymin=lower, ymax=upper)) +
   geom_line(aes(color=type)) +
   geom_ribbon(alpha=0.4)+
   theme_ipsum()+
@@ -279,8 +318,6 @@ ggsave(here::here("plots", "vitalratefit_F.png"), width=9, height=5)
 
 ``` r
 ##Intense Wolf Control== (2017-2020)
-
-
 
 S <- ggs(qt$samples)%>%
   filter(Parameter%in%c("diff_geom_mean_lambda_post_to_pre","diff_geom_mean_lambda_post_to_pre_iwolf"))%>%
@@ -305,7 +342,7 @@ ggplot(S3, aes(x = value,fill=Parameter)) +
   theme_ipsum()+
   labs(x="Change in Population Growth", y="Posterior Samples", title="Effect of Wolf Control on Population Growth")+
     geom_vline(xintercept = 0, linetype="dashed")+
-  facet_wrap(vars(Herd), ncol=2)+
+  facet_wrap(vars(Herd), ncol=1)+
   theme(axis.title.x = element_text(size=15),
         axis.title.y = element_text(size=15),
         axis.text = element_text(size=10),
@@ -347,16 +384,17 @@ ggplot(aes(x = value,fill=Treatment)) +
         legend.title=element_text(size=15))
 
 
-pop.sim <-data.frame(yrs=rep(c(2014:2020), times=3),
-                     est=c(kz$mean$simTotC, kz$mean$simTotP, kz$mean$simTotBAU),
-                     q2.5=c(kz$q2.5$simTotC, kz$q2.5$simTotP, kz$q2.5$simTotBAU),
-                     q97.5=c(kz$q97.5$simTotC, kz$q97.5$simTotP, kz$q97.5$simTotBAU),
-                     Treatment=rep(c("Wolf", "Pen + Wolf", "Control"), each=length(kz$q97.5$simTotC)))
-
-
-
+pop.sim <- kz %>%
+  gather_draws(simTotC[i], simTotP[i], simTotBAU[i])%>%
+  median_qi(.width = cri)%>%
+  mutate(yrs=i+2013,
+         Treatment=case_when(`.variable`%in% "simTotBAU"~ "Control",
+                             `.variable`%in% "simTotC"~ "Wolf",
+                             `.variable`%in% "simTotP"~ "Pen + Wolf"))%>%
+    select(yrs, Treatment,"est"=".value","lower"=".lower","upper"=".upper")
+ 
 b <- ggplot(pop.sim%>%mutate(Treatment=fct_relevel(Treatment,"Pen + Wolf","Wolf","Control")),
-       aes(x = yrs, y = est, ymin=q2.5, ymax=q97.5, fill=Treatment, linetype=Treatment)) +
+       aes(x = yrs, y = est, ymin=lower, ymax=upper, fill=Treatment, linetype=Treatment)) +
   geom_cloud(steps=20, max_alpha = 0.8,se_mult=1.96)+
   #geom_ribbon(alpha=0.2)+
   geom_line() +
@@ -411,95 +449,151 @@ ggsave(here::here("plots", "KZ_effect_prop.png"), width=7, height=5)
 \#\#Summarize population growth
 
 ``` r
-summary.l <- tribble(
-  ~pop,~period,~l, ~l.lower, ~l.upper,
-"Klinse-Za","pre-mgmt",kz$mean$geom_mean_lambda_prepen, kz$q2.5$geom_mean_lambda_prepen,kz$q97.5$geom_mean_lambda_prepen,
-"Klinse-Za","post-mgmt", kz$mean$geom_mean_lambda_postpen, kz$q2.5$geom_mean_lambda_postpen, kz$q97.5$geom_mean_lambda_postpen,
-"Quintette","pre-mgmt",qt$mean$geom_mean_lambda_pre, qt$q2.5$geom_mean_lambda_pre,qt$q97.5$geom_mean_lambda_pre,
-"Quintette","post-mgmt", qt$mean$geom_mean_lambda_post, qt$q2.5$geom_mean_lambda_post, qt$q97.5$geom_mean_lambda_post,
-"Quintette","post-mgmt_iwolf", qt$mean$geom_mean_lambda_post_iwolf, qt$q2.5$geom_mean_lambda_post_iwolf, qt$q97.5$geom_mean_lambda_post_iwolf
-)%>%
-  mutate_if(is.numeric,function(x) round(x,2))
-
-
-summary.l$Years <- c("1996-2012", "2014-2020","2002-2015", "2016-2020", "2017-2020")
+summary.l <- 
+  kz %>%
+  gather_draws(geom_mean_lambda_prepen,geom_mean_lambda_postpen)%>%
+  median_qi(.width = cri)%>%
+  mutate(pop="Klinse-Za",
+         period=case_when(`.variable`%in% "geom_mean_lambda_prepen" ~"pre-mgmt",
+                          `.variable`%in% "geom_mean_lambda_postpen" ~"post-mgmt"))%>%
+rbind(
+  qt %>%
+  gather_draws(geom_mean_lambda_pre,geom_mean_lambda_post,geom_mean_lambda_post_iwolf)%>%
+  median_qi(.width = cri)%>%
+  mutate(pop="Quintette",
+         period=case_when(`.variable`%in% "geom_mean_lambda_pre" ~"pre-mgmt",
+                          `.variable`%in% "geom_mean_lambda_post" ~"post-mgmt",
+                          `.variable`%in% "geom_mean_lambda_post_iwolf" ~"post-mgmt_iwolf"))
+    
+  )%>%
+  mutate_if(is.numeric,function(x) round(x,2))%>%
+  select(pop,period,"lambda"=".value","lower"=".lower","upper"=".upper")%>%
+  arrange(pop,period)
+  
+summary.l$Years <- c("2014-2020", "1996-2012", "2016-2020", "2017-2020", "2002-2015")
 colnames(summary.l) <- c("Herd", "Period", "Lambda", "Lamba.Lower", "Lambda.Upper", "Years")
 
 
 summary.l <- summary.l%>%
-  mutate(`95% CI`=paste(Lamba.Lower,Lambda.Upper, sep="-"))%>%
-  select(Herd, Period, Years, Lambda,`95% CI`)
+  mutate(`90% CrI`=paste(Lamba.Lower,Lambda.Upper, sep="-"))%>%
+  select(Herd, Period, Years, Lambda,`90% CrI`)
 
 write_csv(summary.l,here::here("tables", "lambda.csv"))
 kable(summary.l)
 ```
 
-| Herd      | Period           | Years     | Lambda | 95% CI    |
+| Herd      | Period           | Years     | Lambda | 90% CrI   |
 | :-------- | :--------------- | :-------- | -----: | :-------- |
+| Klinse-Za | post-mgmt        | 2014-2020 |   1.07 | 1.05-1.09 |
 | Klinse-Za | pre-mgmt         | 1996-2012 |   0.89 | 0.88-0.89 |
-| Klinse-Za | post-mgmt        | 2014-2020 |   1.07 | 1.04-1.09 |
-| Quintette | pre-mgmt         | 2002-2015 |   0.94 | 0.9-0.97  |
-| Quintette | post-mgmt        | 2016-2020 |   1.01 | 0.92-1.1  |
-| Quintette | post-mgmt\_iwolf | 2017-2020 |   1.08 | 0.99-1.16 |
+| Quintette | post-mgmt        | 2016-2020 |   1.01 | 0.94-1.09 |
+| Quintette | post-mgmt\_iwolf | 2017-2020 |   1.08 | 1.01-1.14 |
+| Quintette | pre-mgmt         | 2002-2015 |   0.94 | 0.91-0.97 |
 
 \#\#Summarize effect of treatments
 
 ``` r
-summary.effect <- tribble(
-  ~pop,~period,~lambda.dif, ~lower, ~upper,
-"Klinse-Za","wolf + pen",kz$mean$diff_geom_mean_lambda_post_to_pre, kz$q2.5$diff_geom_mean_lambda_post_to_pre,kz$q97.5$diff_geom_mean_lambda_post_to_pre,
-"Klinse-Za","wolf",kz$mean$wolf_eff, kz$q2.5$wolf_eff,kz$q97.5$wolf_eff,
-"Klinse-Za","pen",kz$mean$pen_eff, kz$q2.5$pen_eff,kz$q97.5$pen_eff,
-"Quintette","wolf",qt$mean$diff_geom_mean_lambda_post_to_pre, qt$q2.5$diff_geom_mean_lambda_post_to_pre,qt$q97.5$diff_geom_mean_lambda_post_to_pre,
-"Quintette","iwolf",qt$mean$diff_geom_mean_lambda_post_to_pre_iwolf, qt$q2.5$diff_geom_mean_lambda_post_to_pre_iwolf,qt$q97.5$diff_geom_mean_lambda_post_to_pre_iwolf)%>%
-    mutate_if(is.numeric,function(x) round(x,3))
+summary.effect <- 
+kz %>%
+  gather_draws(diff_geom_mean_lambda_post_to_pre,wolf_eff,pen_eff)%>%
+  median_qi(.width = cri)%>%
+  mutate(pop="Klinse-Za",
+         period=case_when(`.variable`%in% "diff_geom_mean_lambda_post_to_pre" ~"wolf + pen",
+                          `.variable`%in% "pen_eff" ~"pen",
+                          `.variable`%in% "wolf_eff" ~"wolf"))%>%
+rbind(
+  qt%>%
+    gather_draws(diff_geom_mean_lambda_post_to_pre,diff_geom_mean_lambda_post_to_pre_iwolf)%>%
+    median_qi(.width = cri)%>%
+    mutate(pop="Quintette",
+         period=case_when(`.variable`%in% "diff_geom_mean_lambda_post_to_pre" ~"wolf",
+                          `.variable`%in% "diff_geom_mean_lambda_post_to_pre_iwolf" ~"iwolf"))
+  )%>%
+  mutate_if(is.numeric,function(x) round(x,3))%>%
+  select(pop,period,"lambda difference"=".value","lower"=".lower","upper"=".upper")
 
 write_csv(summary.effect,here::here("tables", "treatment_effect.csv"))
 kable(summary.effect)
 ```
 
-| pop       | period     | lambda.dif |   lower | upper |
-| :-------- | :--------- | ---------: | ------: | ----: |
-| Klinse-Za | wolf + pen |      0.180 |   0.154 | 0.207 |
-| Klinse-Za | wolf       |      0.080 |   0.017 | 0.147 |
-| Klinse-Za | pen        |      0.100 |   0.038 | 0.162 |
-| Quintette | wolf       |      0.073 | \-0.036 | 0.182 |
-| Quintette | iwolf      |      0.139 |   0.048 | 0.228 |
+| pop       | period     | lambda difference |   lower | upper |
+| :-------- | :--------- | ----------------: | ------: | ----: |
+| Klinse-Za | wolf + pen |             0.180 |   0.158 | 0.202 |
+| Klinse-Za | pen        |             0.099 |   0.047 | 0.153 |
+| Klinse-Za | wolf       |             0.081 |   0.026 | 0.136 |
+| Quintette | wolf       |             0.074 | \-0.019 | 0.166 |
+| Quintette | iwolf      |             0.139 |   0.062 | 0.214 |
 
 \#\#Summarize vital rates
 
 ``` r
-##define fn
-gm_mean = function(a){prod(a)^(1/length(a))}
+summary.s <- 
+  kz %>%
+  gather_draws(mean_surv_pre,mean_surv_pen,mean_surv_wolf)%>%
+  median_qi(.width = cri)%>%
+  mutate(pop="Klinse-Za",
+         period=case_when(`.variable`%in% "mean_surv_pre" ~"pre-mgmt",
+                          `.variable`%in% "mean_surv_pen" ~"post-mgmt (wolf+pen)",
+                          `.variable`%in% "mean_surv_wolf" ~"post-mgmt (wolf)"))%>%
+rbind(
+  qt %>%
+  gather_draws(mean_surv_pre,mean_surv_post)%>%
+  median_qi(.width = cri)%>%
+  mutate(pop="Quintette",
+         period=case_when(`.variable`%in% "mean_surv_pre" ~"pre-mgmt",
+                          `.variable`%in% "mean_surv_post" ~"post-mgmt"))
+    
+  )%>%
+  select(pop,period,"s"=".value","s.lower"=".lower","s.upper"=".upper")
+  
 
-summary.s <- tribble(
-  ~pop, ~period, ~s, ~s.lower, ~s.upper,
-"Quintette","pre-mgmt",qt$mean$mean_surv_pre, qt$q2.5$mean_surv_pre, qt$q97.5$geom_mean_lambda_pre,
-"Quintette","post-mgmt", qt$mean$mean_surv_post, qt$q2.5$mean_surv_post, qt$q97.5$mean_surv_post,
-"Klinse-Za","pre-mgmt",kz$mean$mean_surv_pre, kz$q2.5$mean_surv_pre, kz$q97.5$geom_mean_lambda_pre,
-"Klinse-Za","post-mgmt (wolf+pen)", kz$mean$mean_surv_pen, kz$q2.5$mean_surv_pen, kz$q97.5$mean_surv_pen,
-"Klinse-Za","post-mgmt (wolf)", kz$mean$mean_surv_wolf, kz$q2.5$mean_surv_wolf, kz$q97.5$mean_surv_wolf)
+
+summary.r <- 
+    kz %>%
+  gather_draws(mean_r_pre,mean_r_pen,mean_r_wolf)%>%
+  median_qi(.width = cri)%>%
+  mutate(pop="Klinse-Za",
+         period=case_when(`.variable`%in% "mean_r_pre" ~"pre-mgmt",
+                          `.variable`%in% "mean_r_pen" ~"post-mgmt (wolf+pen)",
+                          `.variable`%in% "mean_r_wolf" ~"post-mgmt (wolf)"))%>%
+rbind(
+  qt %>%
+  gather_draws(mean_r_pre,mean_r_post)%>%
+  median_qi(.width = cri)%>%
+  mutate(pop="Quintette",
+         period=case_when(`.variable`%in% "mean_r_pre" ~"pre-mgmt",
+                          `.variable`%in% "mean_r_post" ~"post-mgmt"))
+    
+  )%>%
+  select(pop,period,"r"=".value","r.lower"=".lower","r.upper"=".upper")
 
 
-summary.r <- tribble(
-  ~pop,~period,~r, ~r.lower, ~r.upper,
-"Quintette","pre-mgmt",qt$mean$mean_r_pre, qt$q2.5$mean_r_pre, qt$q97.5$mean_r_pre,
-"Quintette","post-mgmt", qt$mean$mean_r_post, qt$q2.5$mean_r_post, qt$q97.5$mean_r_post,
-"Klinse-Za","pre-mgmt",kz$mean$mean_r_pre, kz$q2.5$mean_r_pre, kz$q97.5$mean_r_pre,
-"Klinse-Za","post-mgmt (wolf+pen)", kz$mean$mean_r_pen, kz$q2.5$mean_r_pen, kz$q97.5$mean_r_pen,
-"Klinse-Za","post-mgmt (wolf)",kz$mean$mean_r_wolf, kz$q2.5$mean_r_wolf, kz$q97.5$mean_r_wolf)
 
-summary.r3 <- tribble(
-  ~pop,~period,~r.ad, ~r.ad.lower, ~r.ad.upper,
-"Quintette","pre-mgmt",qt$mean$mean_r3_pre, qt$q2.5$mean_r3_pre, qt$q97.5$mean_r3_pre,
-"Quintette","post-mgmt", qt$mean$mean_r3_post, qt$q2.5$mean_r3_post, qt$q97.5$mean_r3_post,
-"Klinse-Za","pre-mgmt",kz$mean$mean_r3_pre, kz$q2.5$mean_r3_pre, kz$q97.5$mean_r3_pre,
-"Klinse-Za","post-mgmt (wolf+pen)", kz$mean$mean_r3_pen, kz$q2.5$mean_r3_pen, kz$q97.5$mean_r3_pen,
-"Klinse-Za","post-mgmt (wolf)",kz$mean$mean_r3_wolf, kz$q2.5$mean_r3_wolf, kz$q97.5$mean_r3_wolf)
+summary.r3 <- 
+      kz %>%
+  gather_draws(mean_r3_pre,mean_r3_pen,mean_r3_wolf)%>%
+  median_qi(.width = cri)%>%
+  mutate(pop="Klinse-Za",
+         period=case_when(`.variable`%in% "mean_r3_pre" ~"pre-mgmt",
+                          `.variable`%in% "mean_r3_pen" ~"post-mgmt (wolf+pen)",
+                          `.variable`%in% "mean_r3_wolf" ~"post-mgmt (wolf)"))%>%
+rbind(
+  qt %>%
+  gather_draws(mean_r3_pre,mean_r3_post)%>%
+  median_qi(.width = cri)%>%
+  mutate(pop="Quintette",
+         period=case_when(`.variable`%in% "mean_r3_pre" ~"pre-mgmt",
+                          `.variable`%in% "mean_r3_post" ~"post-mgmt"))
+    
+  )%>%
+  select(pop,period,"r.ad"=".value","r.ad.lower"=".lower","r.ad.upper"=".upper")
+
+
 
 summary.vr <- summary.s%>%
   left_join(summary.r)%>%
   left_join(summary.r3)%>%
+  arrange(pop,period)%>%
   mutate_if(is.numeric,function(x) round(x,2))
 ```
 
@@ -507,27 +601,27 @@ summary.vr <- summary.s%>%
     ## Joining, by = c("pop", "period")
 
 ``` r
-summary.vr$Years <- c("2002-2015", "2016-2020", "1995-2012", "2014-2020", "2013-2020")
+summary.vr$Years <- c("2013-2020","2014-2020","1995-2012" , "2016-2020","2002-2015")
 
 summary.vr <- summary.vr%>%
-  mutate(`s 95% CI`=paste(s.lower,s.upper, sep="-"),
-         `r 95% CI`=paste(r.lower,r.upper, sep="-"),
-         `r.ad 95% CI`=paste(r.ad.lower,r.ad.upper, sep="-"))%>%
-  select(pop, period, Years, s,`s 95% CI`, r,`r 95% CI`,r.ad,`r.ad 95% CI`)
+  mutate(`s CrI`=paste(s.lower,s.upper, sep="-"),
+         `r CrI`=paste(r.lower,r.upper, sep="-"),
+         `r.ad CrI`=paste(r.ad.lower,r.ad.upper, sep="-"))%>%
+  select(pop, period, Years, s,`s CrI`, r,`r CrI`,r.ad,`r.ad CrI`)
 
 
 
-colnames(summary.vr) <- c("Group", "Period", "Years", "AF Survival","95% CI", "Recruitment","r95% CI", "Recruitment-Adult Only","r.ad.95% CI")
+colnames(summary.vr) <- c("Group", "Period", "Years", "AF Survival","90% CrI", "Recruitment","r90% CrI", "Recruitment-Adult Only","r.ad.90% CrI")
 
 
 write_csv(summary.vr,here::here("tables", "vital_rates.csv"))
 kable(summary.vr)
 ```
 
-| Group     | Period               | Years     | AF Survival | 95% CI    | Recruitment | r95% CI   | Recruitment-Adult Only | r.ad.95% CI |
-| :-------- | :------------------- | :-------- | ----------: | :-------- | ----------: | :-------- | ---------------------: | :---------- |
-| Quintette | pre-mgmt             | 2002-2015 |        0.84 | 0.81-0.97 |        0.13 | 0.11-0.14 |                   0.12 | 0.1-0.14    |
-| Quintette | post-mgmt            | 2016-2020 |        0.90 | 0.86-0.94 |        0.18 | 0.15-0.22 |                   0.20 | 0.14-0.26   |
-| Klinse-Za | pre-mgmt             | 1995-2012 |        0.79 | 0.76-0.89 |        0.12 | 0.1-0.13  |                   0.12 | 0.1-0.14    |
-| Klinse-Za | post-mgmt (wolf+pen) | 2014-2020 |        0.91 | 0.91-0.91 |        0.24 | 0.24-0.24 |                   0.30 | 0.3-0.3     |
-| Klinse-Za | post-mgmt (wolf)     | 2013-2020 |        0.85 | 0.79-0.9  |        0.12 | 0.1-0.14  |                   0.14 | 0.11-0.16   |
+| Group     | Period               | Years     | AF Survival | 90% CrI   | Recruitment | r90% CrI  | Recruitment-Adult Only | r.ad.90% CrI |
+| :-------- | :------------------- | :-------- | ----------: | :-------- | ----------: | :-------- | ---------------------: | :----------- |
+| Klinse-Za | post-mgmt (wolf)     | 2013-2020 |        0.85 | 0.8-0.9   |        0.12 | 0.1-0.13  |                   0.20 | 0.16-0.24    |
+| Klinse-Za | post-mgmt (wolf+pen) | 2014-2020 |        0.91 | 0.91-0.91 |        0.29 | 0.29-0.29 |                   0.30 | 0.3-0.3      |
+| Klinse-Za | pre-mgmt             | 1995-2012 |        0.79 | 0.77-0.81 |        0.12 | 0.1-0.13  |                   0.15 | 0.12-0.18    |
+| Quintette | post-mgmt            | 2016-2020 |        0.90 | 0.86-0.93 |        0.18 | 0.15-0.21 |                   0.28 | 0.2-0.38     |
+| Quintette | pre-mgmt             | 2002-2015 |        0.84 | 0.81-0.86 |        0.13 | 0.12-0.14 |                   0.18 | 0.14-0.53    |

@@ -264,7 +264,7 @@ for(yr in 2:nyr){
 		 R[yr,2] <- 0
 		 }
 	 for(yr in 21:nyr){
-		 R[yr,2] <- N[yr,1,2] /((N[yr-1,1,2] + N[yr-1,2,2] + N[yr-1,3,2]) * S[yr-1,2])
+		 R[yr,2] <- N[yr,1,2] /((N[yr-1,2,2] + N[yr-1,3,2]) * S[yr-1,2])
 		 R.sim[yr,2] <- N[yr,1,2] /(N[yr-1,3,2]*S[yr-1,2])
 		 }
 		
@@ -273,7 +273,7 @@ for(yr in 2:nyr){
 		 }
 		 
 	for(yr in 2:nyr){
-     R.ad[yr,1] <- N[yr,1,1] /((N[yr-1,1,1] + N[yr-1,2,1] + N[yr-1,3,1]) * S[yr-1,1])
+     R.ad[yr,1] <- N[yr,1,1] /(N[yr-1,3,1] * S[yr-1,1])
 		 }
 		
 

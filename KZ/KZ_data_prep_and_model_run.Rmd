@@ -428,25 +428,14 @@ res_df <- res_df%>%rbind(data.frame(rbind(yr_df),
 ##GROUP SPECIFIC VITAL RATES
 ```{r Plot results-vital rates, results='hide', message=FALSE, warning=FALSE}
 #R
-pop_df_r <- data.frame(estimate=c(out_rnd_eff$mean$totCalvesC/out_rnd_eff$mean$totAdultsC,
-                                  out_rnd_eff$mean$totCalvesP/out_rnd_eff$mean$totAdultsP),
-                       lower=c(out_rnd_eff$q2.5$totCalvesC/out_rnd_eff$q2.5$totAdultsC,
-                                  out_rnd_eff$q2.5$totCalvesP/out_rnd_eff$q2.5$totAdultsP),
-                       upper=c(out_rnd_eff$q97.5$totCalvesC/out_rnd_eff$q97.5$totAdultsC,
-                                  out_rnd_eff$q97.5$totCalvesP/out_rnd_eff$q97.5$totAdultsP),
-                       pop=rep(c("Free", "Pen"), each=nyr),
-                       param="Recruitment",
-                       yrs=rep(yrs, times=2))%>%
-  mutate(lower=case_when(lower<0~0,
-                         TRUE~lower))
 
 pop_df_r <- rbind(
                   data.frame(estimate=c(
-                                  out_rnd_eff$mean$totCalvesP/out_rnd_eff$mean$totAdultsP),
+                                  out_rnd_eff$mean$R[,2]),
                        lower=c(
-                                  out_rnd_eff$q2.5$totCalvesP/out_rnd_eff$q2.5$totAdultsP),
+                                  out_rnd_eff$mean$R[,2]),
                        upper=c(
-                                  out_rnd_eff$q97.5$totCalvesP/out_rnd_eff$q97.5$totAdultsP),
+                                  out_rnd_eff$mean$R[,2]),
                        pop=rep(c("Pen"), each=nyr),
                        param="Recruitment",
                        yrs=rep(yrs, times=1)),
@@ -512,11 +501,20 @@ ggplot(pop_df2%>%
 
 ##COMPARE TO RAW VITAL RATE DATA
 ```{r Plot results-vital rates vs raw data, results='hide', message=FALSE, warning=FALSE}
+
+
 calc.vr <- pop_df2%>%
          filter(yrs>1996)%>%
          mutate(estimate=case_when(param=="Recruitment" & yrs<2015 & pop=="Pen"~NA_real_, 
                                    param=="Survival" & yrs<2014 & pop=="Pen"~NA_real_, 
                                    TRUE~estimate))
+
+
+  
+adults.inpen <-read.csv(here::here("data", "KZ", "adult_female_pencount_endofyear_KZ.csv"))%>%select(Year,F.cnt=Mean)%>%
+    rbind(read.csv(here::here("data", "KZ", "sa1_pencount_in_KZ.csv"))%>%select(Year,F.cnt=Mean))%>%
+    group_by(Year)%>%
+    summarise(F.cnt=sum(F.cnt))
 
 raw.vr <- rbind(adult_female_survival%>%mutate(param="Survival",
                                          pop=case_when(Pop_desc%in%"Control"~"Free",TRUE~as.character(Pop_desc)),
@@ -535,8 +533,8 @@ raw.vr <- rbind(adult_female_survival%>%mutate(param="Survival",
   select(estimate,lower,upper,pop,param,yrs),  ###ADD FREE RECRUIT
   
   calf_female_pencount_recruit%>%
-    left_join(read.csv(here::here("data", "KZ", "adult_female_pencount_endofyear_KZ.csv"))%>%select(Year,F.cnt=Mean))%>%
-    mutate(estimate=Mean/F.cnt)%>%
+    left_join(adults.inpen)%>%
+    mutate(estimate=Mean/lag(F.cnt))%>%
     filter(Year>2014)%>% 
                                 mutate(param="Recruitment",
                                          lower=NA,

@@ -90,7 +90,7 @@ model{
 		totNMF[yr] <- totAdultsMF[yr] + totCalvesMF[yr] 
 		
 		# derive adult only recruitment
-    R.ad[yr] <- N[yr,1,1] /((N[yr-1,1,1] + N[yr-1,2,1] + N[yr-1,3,1]) * S[yr-1])
+    R.ad[yr] <- N[yr,1,1] /((N[yr-1,3,1]) * S[yr-1])
 		
 		
 		}
