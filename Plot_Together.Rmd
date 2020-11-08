@@ -1,13 +1,16 @@
+
 ---
 title: "KZ and QT IPM results"
 author: "Sara Williams, Hans Martin, and Clayton Lamb"
 date: '`r format(Sys.time(), "%d %B, %Y")`'
 output: github_document
 ---
+
 ```{r render, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, results='hide'}
 rmarkdown::render(here::here('Plot_Together.Rmd'),
                   output_file = "README.md")
 ```
+
 #See folders KZ and QT for the IPM's for each herd
 
 ##Load Data

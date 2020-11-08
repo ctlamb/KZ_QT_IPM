@@ -450,6 +450,31 @@ ggarrange(a,b,labels="AUTO")
 
 ``` r
 ggsave(here::here("plots", "KZ_effect_and_sim.png"), width=11, height=5)
+
+
+##table
+
+summary.sim <- 
+  kz %>%
+  gather_draws(geom_mean_lambda_prepen,geom_mean_lambda_SimC2,geom_mean_lambda_SimPen)%>%
+  median_qi(.width = cri)%>%
+  mutate(pop="Klinse-Za",
+         period=case_when(`.variable`%in% "geom_mean_lambda_prepen" ~"Control",
+                          `.variable`%in% "geom_mean_lambda_SimC2" ~"Wolf",
+                          `.variable`%in% "geom_mean_lambda_SimPen" ~"Wolf+Pen"))%>%
+  mutate_if(is.numeric,function(x) round(x,2))%>%
+  select(pop,period,"lambda"=".value","lower"=".lower","upper"=".upper")%>%
+  arrange(pop,period)
+  
+colnames(summary.sim) <- c("Herd", "Period", "Lambda", "Lamba.Lower", "Lambda.Upper")
+
+
+summary.sim <- summary.sim%>%
+  mutate(`90% CrI`=paste(Lamba.Lower,Lambda.Upper, sep="-"))%>%
+  select(Herd, Period, Lambda,`90% CrI`)
+
+write_csv(summary.sim,here::here("tables", "sim_lambda.csv"))
+kable(summary.sim)
 ```
 
 \#\#Wolf vs Pen effect
