@@ -1,7 +1,7 @@
 KZ and QT IPM results
 ================
 Sara Williams, Hans Martin, and Clayton Lamb
-31 October, 2020
+08 November, 2020
 
 \#See folders KZ and QT for the IPM’s for each herd
 
@@ -68,11 +68,11 @@ cri<-0.9
 \#\#ABUNDANCE
 
 ``` r
-res_df <- kz %>%
+abund_MF <- kz %>%
           spread_draws(totNMF[i]) %>%
           median_qi(.width = cri)%>%
                      mutate(
-                     param="Total M+F",
+                     param="Abundance (MF)",
                      herd="Klinse-Za")%>%
   cbind(kz_yr_df)%>%
   rbind(
@@ -80,31 +80,56 @@ res_df <- kz %>%
           spread_draws(totNMF[i]) %>%
           median_qi(.width = cri)%>%
                      mutate(
-                     param="Total M+F",
+                     param="Abundance (MF)",
                      herd="Quintette")%>%
       cbind(qt_yr_df))%>%
   rename("lower" = ".lower",
          "upper" = ".upper",
          "est"="totNMF")%>%
   select(est,lower,upper,param,herd,yrs, yr_idx)
-    
+
+lambda_F <- kz %>%
+          spread_draws(lambda[i]) %>%
+          median_qi(.width = cri)%>%
+                     mutate(
+                     param="Population Growth (F)",
+                     herd="Klinse-Za")%>%
+  cbind(kz_yr_df)%>%
+  rbind(
+    qt %>%
+          spread_draws(lambda[i]) %>%
+          median_qi(.width = cri)%>%
+                     mutate(
+                     param="Population Growth (F)",
+                     herd="Quintette")%>%
+      cbind(qt_yr_df))%>%
+  rename("lower" = ".lower",
+         "upper" = ".upper",
+         "est"="lambda")%>%
+  select(est,lower,upper,param,herd,yrs, yr_idx)%>%
+  mutate(est=case_when(yrs<=min(kz_yr_df$yrs) & herd=="Klinse-Za"~NA_real_, 
+                       yrs<=min(qt_yr_df$yrs) & herd=="Quintette"~NA_real_, 
+                                   TRUE~est))
+  
   
 
 
-ggplot(res_df,aes(x = yrs, y = est, ymin=lower, ymax=upper, fill=herd)) +
+ggplot(rbind(abund_MF,lambda_F),aes(x = yrs, y = est, ymin=lower, ymax=upper, fill=herd)) +
   #geom_cloud(steps=50, max_alpha = 1,se_mult=1.96)+
   geom_ribbon(alpha=0.4)+
   geom_line() +
   geom_point() +
   theme_ipsum()+
   theme(legend.position = "none")+
-  ylab("Abundance")+
+  ylab("")+
   xlab("Year")+
-  facet_wrap(vars(herd), scales="free_y")+
+  facet_grid(param~herd, scales="free_y")+
   labs(x="Year",title="Population Trajectory")+
     expand_limits(y=0)+
   theme(axis.title.x = element_text(size=15),
         axis.title.y = element_text(size=15),
+        strip.text.x = element_text(size=15),
+        strip.text.y = element_text(size=15),
         axis.text = element_text(size=10),
         legend.text = element_text(size=13),
         legend.title=element_text(size=15))+
@@ -114,8 +139,16 @@ ggplot(res_df,aes(x = yrs, y = est, ymin=lower, ymax=upper, fill=herd)) +
 ![](README_files/figure-gfm/Plot%20results-abundance-1.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots", "abundance_MF.png"), width=8, height=5)
-write_csv(res_df, here::here("tables", "abundance_MF.csv"))
+ggsave(here::here("plots", "abundance_MF.png"), width=8, height=10)
+write_csv(abund_MF%>%mutate_if(is.numeric, round, 1), here::here("tables", "abundance_MF.csv"))
+
+write_csv(kz %>%
+          spread_draws(totN[i]) %>%
+          median_qi(.width = cri)%>%
+          mutate_if(is.numeric, round, 3)%>%
+                     mutate(
+                     param="Total F",
+                     herd="Klinse-Za")%>%cbind(kz_yr_df), here::here("tables", "abundance_F.csv"))
 ```
 
 \#\#ABUNDANCE FIT
@@ -444,6 +477,9 @@ ggplot(aes(x = value,fill=Treatment)) +
 
 ``` r
 ggsave(here::here("plots", "KZ_effect_prop.png"), width=7, height=5)
+
+#kz$mean$wolf_eff_proportion
+#kz$mean$pen_eff_proportion
 ```
 
 \#\#Summarize population growth
