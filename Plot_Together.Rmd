@@ -445,10 +445,10 @@ b <- ggplot(pop.sim%>%mutate(Treatment=fct_relevel(Treatment,"Pen + Wolf","Wolf"
 ggarrange(a,b,labels="AUTO")
 
 ggsave(here::here("plots", "KZ_effect_and_sim.png"), width=11, height=5)
+```
 
-
-##table
-
+##Summarize simultion population growth
+```{r Summarise sim growth rates}
 summary.sim <- 
   kz %>%
   gather_draws(geom_mean_lambda_prepen,geom_mean_lambda_SimC2,geom_mean_lambda_SimPen)%>%

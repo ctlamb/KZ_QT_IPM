@@ -450,10 +450,11 @@ ggarrange(a,b,labels="AUTO")
 
 ``` r
 ggsave(here::here("plots", "KZ_effect_and_sim.png"), width=11, height=5)
+```
 
+\#\#Summarize simultion population growth
 
-##table
-
+``` r
 summary.sim <- 
   kz %>%
   gather_draws(geom_mean_lambda_prepen,geom_mean_lambda_SimC2,geom_mean_lambda_SimPen)%>%
@@ -476,6 +477,12 @@ summary.sim <- summary.sim%>%
 write_csv(summary.sim,here::here("tables", "sim_lambda.csv"))
 kable(summary.sim)
 ```
+
+| Herd      | Period   | Lambda | 90% CrI   |
+| :-------- | :------- | -----: | :-------- |
+| Klinse-Za | Control  |   0.89 | 0.88-0.89 |
+| Klinse-Za | Wolf     |   0.97 | 0.91-1.02 |
+| Klinse-Za | Wolf+Pen |   1.10 | 1.1-1.1   |
 
 \#\#Wolf vs Pen effect
 
