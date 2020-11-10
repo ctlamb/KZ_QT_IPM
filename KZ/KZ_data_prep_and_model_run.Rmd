@@ -287,7 +287,8 @@ model_parms <- c("lambda","lambdaC",
 	"mean_r3_pre","mean_r3_pen","mean_r3_wolf",
 	"wolf_eff_proportion","pen_eff_proportion",
 	"lambdaSimC", "lambdaSimC2","lambdaSimP",
-	"wolf_eff","pen_eff", "wolf_eff_iwolf","pen_eff_iwolf")
+	"wolf_eff","pen_eff", "wolf_eff_iwolf","pen_eff_iwolf","pen_eff_ipen", "wolf_eff_ipen",
+	"diff_geom_mean_lambda_post_to_pre_ipen", "geom_mean_lambda_postpen_iPen", "geom_mean_lambda_SimPen_iPen")
 
 
 #  Run model with survival and recruitment varying per year
@@ -322,6 +323,7 @@ out_rnd_eff <- jagsUI::jags(ipm_dat,
 
 save(out_rnd_eff, file = here::here("KZ", "kz_out_rnd_eff.Rdata"))
 pb_upload(here::here("KZ", "kz_out_rnd_eff.Rdata"),
+          repo = "ctlamb/KZ_QT_IPM", 
           tag = "v0.0.1",
           overwrite=TRUE)
 unlink(here::here("KZ", "kz_out_rnd_eff.Rdata"))

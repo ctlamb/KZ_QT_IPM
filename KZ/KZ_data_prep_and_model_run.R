@@ -1,4 +1,4 @@
-## ----render, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, results='hide'--------------------------------------------------------------------------
+## ----render, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, results='hide'----------------------------------------------------------------------------------
 ## rmarkdown::render(here::here('KZ','KZ_data_prep_and_model_run.Rmd'),
 ##                   output_file = "README.md")
 ## 
@@ -6,7 +6,7 @@
 ##             output=here::here("KZ",'KZ_data_prep_and_model_run.R'))
 
 
-## ----Load packages and data, results='hide', message=FALSE, warning=FALSE-------------------------------------------------------------------------------------
+## ----Load packages and data, results='hide', message=FALSE, warning=FALSE---------------------------------------------------------------------------------------------
 library(ggmcmc)
 library(jagsUI)
 library(knitr)
@@ -44,7 +44,7 @@ calf_female_pencount_recruit <-  read.csv(here::here("data", "KZ", "calf_female_
 sightability <- read.csv(here::here("data", "KZ", "sightability_KZ.csv"))
 
 
-## ----sight bootstrap, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, results='hide'-----------------------------------------------------------------
+## ----sight bootstrap, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, results='hide'-------------------------------------------------------------------------
 ## 
 ## for(i in 1:nrow(sightability)){
 ##   if(!is.na(sightability[i,"seen"])){
@@ -76,7 +76,7 @@ sightability <- read.csv(here::here("data", "KZ", "sightability_KZ.csv"))
 ##   expand_limits(y=0)
 
 
-## ----Prep for IPM, results='hide', message=FALSE, warning=FALSE-----------------------------------------------------------------------------------------------
+## ----Prep for IPM, results='hide', message=FALSE, warning=FALSE-------------------------------------------------------------------------------------------------------
 
 #  Years of study
 yrs <-  seq(from = 1995, to = 2020, by = 1)
@@ -211,7 +211,7 @@ calf_abundat <- count_dat %>%
 nac <- nrow(calf_abundat)
 
 
-## ----Run model in JAGS, results='hide', message=FALSE, warning=FALSE------------------------------------------------------------------------------------------
+## ----Run model in JAGS, results='hide', message=FALSE, warning=FALSE--------------------------------------------------------------------------------------------------
 # MCMC params
 nt <- 3
 nb <- 8000
@@ -272,7 +272,8 @@ model_parms <- c("lambda","lambdaC",
 	"mean_r3_pre","mean_r3_pen","mean_r3_wolf",
 	"wolf_eff_proportion","pen_eff_proportion",
 	"lambdaSimC", "lambdaSimC2","lambdaSimP",
-	"wolf_eff","pen_eff", "wolf_eff_iwolf","pen_eff_iwolf")
+	"wolf_eff","pen_eff", "wolf_eff_iwolf","pen_eff_iwolf","pen_eff_ipen", "wolf_eff_ipen",
+	"diff_geom_mean_lambda_post_to_pre_ipen", "geom_mean_lambda_postpen_iPen", "geom_mean_lambda_SimPen_iPen")
 
 
 #  Run model with survival and recruitment varying per year
@@ -307,12 +308,13 @@ out_rnd_eff <- jagsUI::jags(ipm_dat,
 
 save(out_rnd_eff, file = here::here("KZ", "kz_out_rnd_eff.Rdata"))
 pb_upload(here::here("KZ", "kz_out_rnd_eff.Rdata"),
+          repo = "ctlamb/KZ_QT_IPM", 
           tag = "v0.0.1",
           overwrite=TRUE)
 unlink(here::here("KZ", "kz_out_rnd_eff.Rdata"))
 
 
-## ----MODEL DIAGNOSTICS, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, results='hide'---------------------------------------------------------------
+## ----MODEL DIAGNOSTICS, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, results='hide'-----------------------------------------------------------------------
 ## MCMCtrace(out_rnd_eff,
 ##         params = "totAdult",
 ##         ISB = FALSE,
@@ -332,7 +334,7 @@ unlink(here::here("KZ", "kz_out_rnd_eff.Rdata"))
 ## #MCMCsummary(out_rnd_eff)%>%filter(n.eff<400)
 
 
-## ----Plot results-abundance, results='hide', message=FALSE, warning=FALSE-------------------------------------------------------------------------------------
+## ----Plot results-abundance, results='hide', message=FALSE, warning=FALSE---------------------------------------------------------------------------------------------
 res_df <- data.frame(rbind(yr_df,yr_df),
                      est=c(out_rnd_eff$mean$totN, out_rnd_eff$mean$lambda),
                      q2.5=c(out_rnd_eff$q2.5$totN, out_rnd_eff$q2.5$lambda),
@@ -408,7 +410,7 @@ res_df <- res_df%>%rbind(data.frame(rbind(yr_df),
 #ggsave(here::here("plots", "abundance_MF.png"), width=5, height=8)
 
 
-## ----Plot results-vital rates, results='hide', message=FALSE, warning=FALSE-----------------------------------------------------------------------------------
+## ----Plot results-vital rates, results='hide', message=FALSE, warning=FALSE-------------------------------------------------------------------------------------------
 #R
 
 pop_df_r <- rbind(
@@ -481,7 +483,7 @@ ggplot(pop_df2%>%
 #ggsave(here::here("plots", "vital_rates.png"), width=8, height=5)
 
 
-## ----Plot results-vital rates vs raw data, results='hide', message=FALSE, warning=FALSE-----------------------------------------------------------------------
+## ----Plot results-vital rates vs raw data, results='hide', message=FALSE, warning=FALSE-------------------------------------------------------------------------------
 
 
 calc.vr <- pop_df2%>%
@@ -564,7 +566,7 @@ write_csv(raw.vr, here::here("data", "KZ", "vitalrate_validation_KZ.csv"))
 
 
 
-## ----Plot results-counts vs raw data, fig.height=6, fig.width=6, message=FALSE, warning=FALSE, results='hide'-------------------------------------------------
+## ----Plot results-counts vs raw data, fig.height=6, fig.width=6, message=FALSE, warning=FALSE, results='hide'---------------------------------------------------------
 
 raw.abund <-data.frame(param="MF_Estimate",
                                          est=count_dat$Estimate_ADULTMF+count_dat$Estimate_CALFMF,
@@ -602,7 +604,7 @@ ggplot(aes(x = yrs, y = est, fill=class)) +
 
 
 
-## ----Popsim, fig.height=6, fig.width=6, results='asis'--------------------------------------------------------------------------------------------------------
+## ----Popsim, fig.height=6, fig.width=6, results='asis'----------------------------------------------------------------------------------------------------------------
 pop.sim <-data.frame(yrs=rep(c(2014:2020), times=3),
                      est=c(out_rnd_eff$mean$simTotC, out_rnd_eff$mean$simTotP, out_rnd_eff$mean$simTotBAU),
                      q2.5=c(out_rnd_eff$q2.5$simTotC, out_rnd_eff$q2.5$simTotP, out_rnd_eff$q2.5$simTotBAU),
@@ -628,7 +630,7 @@ ggplot(pop.sim%>%mutate(pop=fct_relevel(pop,"Pen + Wolf","Wolf","Control")),
 #ggsave(here::here("plots", "kz_sim.png"), width=5, height=5)
 
 
-## ----Age structure, fig.height=6, fig.width=6, results='asis'-------------------------------------------------------------------------------------------------
+## ----Age structure, fig.height=6, fig.width=6, results='asis'---------------------------------------------------------------------------------------------------------
 
 pop_age <-as.data.frame(out_rnd_eff$mean$N[,,1])%>%
   mutate(pop="Free",
@@ -688,7 +690,7 @@ pop_age%>%
 
 
 
-## ----Plot results-summarise growth rates, results='asis'------------------------------------------------------------------------------------------------------
+## ----Plot results-summarise growth rates, results='asis'--------------------------------------------------------------------------------------------------------------
 
 summary.l <- tribble(
   ~pop,~l, ~l.lower, ~l.upper,
@@ -730,7 +732,7 @@ data.frame(rbind(yr_df),
 
 
 
-## ----Plot results-summarise vital rates, results='asis'-------------------------------------------------------------------------------------------------------
+## ----Plot results-summarise vital rates, results='asis'---------------------------------------------------------------------------------------------------------------
 
 summary.s <- tribble(
   ~pop,~s, ~s.lower, ~s.upper,
@@ -776,7 +778,7 @@ gt(summary.vr)%>%
   ) 
 
 
-## ----effects, results='asis'----------------------------------------------------------------------------------------------------------------------------------
+## ----effects, results='asis'------------------------------------------------------------------------------------------------------------------------------------------
 
 summary.effect <- tribble(
   ~pop,~lambda.dif, ~lower, ~upper,

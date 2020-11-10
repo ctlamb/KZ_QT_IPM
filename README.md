@@ -1,7 +1,7 @@
 KZ and QT IPM results
 ================
 Sara Williams, Hans Martin, and Clayton Lamb
-08 November, 2020
+09 November, 2020
 
 \#See folders KZ and QT for the IPM’s for each herd
 
@@ -133,13 +133,16 @@ ggplot(rbind(abund_MF,lambda_F),aes(x = yrs, y = est, ymin=lower, ymax=upper, fi
         axis.text = element_text(size=10),
         legend.text = element_text(size=13),
         legend.title=element_text(size=15))+
-    geom_vline(data=data.frame(herd=unique(res_df$herd), year=c(2012.5,2015.5)),aes(xintercept = year),linetype="dashed")
+    geom_vline(data=data.frame(herd=unique(abund_MF$herd),
+                               param=rep(unique(rbind(abund_MF,lambda_F)$param),each=2),
+                               year=rep(c(2012.5,2015.5)),times=2),
+               aes(xintercept = year),linetype="dashed")
 ```
 
 ![](README_files/figure-gfm/Plot%20results-abundance-1.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots", "abundance_MF.png"), width=8, height=10)
+ggsave(here::here("plots", "abundance_MF.png"), width=8, height=8)
 write_csv(abund_MF%>%mutate_if(is.numeric, round, 1), here::here("tables", "abundance_MF.csv"))
 
 write_csv(kz %>%
@@ -154,7 +157,7 @@ write_csv(kz %>%
 \#\#ABUNDANCE FIT
 
 ``` r
-fit_df <- res_df%>%
+fit_df <- abund_MF%>%
   mutate(type="modelled")%>%
   #bind on observed data
   ##Estimates
@@ -320,6 +323,10 @@ ggplot(mod_vr,
 
 ![](README_files/figure-gfm/Plot%20results-vital%20rates-1.png)<!-- -->
 
+``` r
+ggsave(here::here("plots", "vitalrate_F.png"), width=9, height=5)
+```
+
 \#\#COMPARE TO RAW VITAL RATE DATA
 
 ``` r
@@ -350,12 +357,12 @@ ggsave(here::here("plots", "vitalratefit_F.png"), width=9, height=5)
 \#\#WOLF EFFECT
 
 ``` r
-##Intense Wolf Control== (2017-2020)
+##Refined Wolf Control== (2017-2020)
 
 S <- ggs(qt$samples)%>%
   filter(Parameter%in%c("diff_geom_mean_lambda_post_to_pre","diff_geom_mean_lambda_post_to_pre_iwolf"))%>%
   mutate(Parameter=case_when(Parameter%in%"diff_geom_mean_lambda_post_to_pre"~"All Wolf Control",
-                             Parameter%in%"diff_geom_mean_lambda_post_to_pre_iwolf"~"Intense Wolf Control"
+                             Parameter%in%"diff_geom_mean_lambda_post_to_pre_iwolf"~"Refined Wolf Control"
                              ),
          Herd="Quintette")
 
@@ -363,13 +370,14 @@ S <- ggs(qt$samples)%>%
 S2 <- ggs(kz$samples)%>%
   filter(Parameter%in%c("wolf_eff","wolf_eff_iwolf"))%>%
     mutate(Parameter=case_when(Parameter%in%"wolf_eff"~"All Wolf Control",
-                             Parameter%in%"wolf_eff_iwolf"~"Intense Wolf Control"
+                             Parameter%in%"wolf_eff_iwolf"~"Refined Wolf Control"
                              ),
          Herd="Klinse-Za")
 
-S3 <- rbind(S,S2)
+wolf_effects <- rbind(S,S2)
+rm(S)
 
-ggplot(S3, aes(x = value,fill=Parameter)) +
+ggplot(wolf_effects%>%filter(Parameter%in%"All Wolf Control"), aes(x = value,fill=Parameter)) +
   geom_density(alpha=0.5) +
   theme_ipsum()+
   theme_ipsum()+
@@ -380,22 +388,23 @@ ggplot(S3, aes(x = value,fill=Parameter)) +
         axis.title.y = element_text(size=15),
         axis.text = element_text(size=10),
         legend.text = element_text(size=13),
-        legend.title=element_text(size=15))
+        legend.title=element_text(size=15),
+        legend.position = "none")
 ```
 
 ![](README_files/figure-gfm/wolf-1.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots", "wolf_effect.png"), width=9, height=5)
+ggsave(here::here("plots", "wolf_effect.png"), width=6, height=5)
 ```
 
 \#\#KZ EFFECT
 
 ``` r
-S <- ggs(kz$samples)%>%
-  filter(Parameter%in%c("wolf_eff","pen_eff", "wolf_eff_iwolf","pen_eff_iwolf"))
+kz_effects <- ggs(kz$samples)%>%
+  filter(Parameter%in%c("wolf_eff","pen_eff", "wolf_eff_iwolf","pen_eff_iwolf","pen_eff_ipen","wolf_eff_ipen"))
 
-a <- S%>%
+a <- kz_effects%>%
   pivot_wider(id_cols=c("Iteration", "Chain"), names_from = "Parameter", values_from = "value")%>%
   mutate(pen_eff=pen_eff+wolf_eff,
          pen_eff_iwolf=pen_eff_iwolf+wolf_eff_iwolf)%>%
@@ -510,8 +519,8 @@ ggplot(aes(x = value,fill=Treatment)) +
 ``` r
 ggsave(here::here("plots", "KZ_effect_prop.png"), width=7, height=5)
 
-#kz$mean$wolf_eff_proportion
-#kz$mean$pen_eff_proportion
+kz$mean$wolf_eff_proportion
+kz$mean$pen_eff_proportion
 ```
 
 \#\#Summarize population growth
@@ -526,19 +535,18 @@ summary.l <-
                           `.variable`%in% "geom_mean_lambda_postpen" ~"post-mgmt"))%>%
 rbind(
   qt %>%
-  gather_draws(geom_mean_lambda_pre,geom_mean_lambda_post,geom_mean_lambda_post_iwolf)%>%
+  gather_draws(geom_mean_lambda_pre,geom_mean_lambda_post)%>%
   median_qi(.width = cri)%>%
   mutate(pop="Quintette",
          period=case_when(`.variable`%in% "geom_mean_lambda_pre" ~"pre-mgmt",
-                          `.variable`%in% "geom_mean_lambda_post" ~"post-mgmt",
-                          `.variable`%in% "geom_mean_lambda_post_iwolf" ~"post-mgmt_iwolf"))
+                          `.variable`%in% "geom_mean_lambda_post" ~"post-mgmt"))
     
   )%>%
   mutate_if(is.numeric,function(x) round(x,2))%>%
   select(pop,period,"lambda"=".value","lower"=".lower","upper"=".upper")%>%
   arrange(pop,period)
   
-summary.l$Years <- c("2014-2020", "1996-2012", "2016-2020", "2017-2020", "2002-2015")
+summary.l$Years <- c("2014-2020", "1996-2012", "2016-2020", "2002-2015")
 colnames(summary.l) <- c("Herd", "Period", "Lambda", "Lamba.Lower", "Lambda.Upper", "Years")
 
 
@@ -550,13 +558,12 @@ write_csv(summary.l,here::here("tables", "lambda.csv"))
 kable(summary.l)
 ```
 
-| Herd      | Period           | Years     | Lambda | 90% CrI   |
-| :-------- | :--------------- | :-------- | -----: | :-------- |
-| Klinse-Za | post-mgmt        | 2014-2020 |   1.07 | 1.05-1.09 |
-| Klinse-Za | pre-mgmt         | 1996-2012 |   0.89 | 0.88-0.89 |
-| Quintette | post-mgmt        | 2016-2020 |   1.01 | 0.94-1.09 |
-| Quintette | post-mgmt\_iwolf | 2017-2020 |   1.08 | 1.01-1.14 |
-| Quintette | pre-mgmt         | 2002-2015 |   0.94 | 0.91-0.97 |
+| Herd      | Period    | Years     | Lambda | 90% CrI   |
+| :-------- | :-------- | :-------- | -----: | :-------- |
+| Klinse-Za | post-mgmt | 2014-2020 |   1.07 | 1.05-1.09 |
+| Klinse-Za | pre-mgmt  | 1996-2012 |   0.89 | 0.88-0.89 |
+| Quintette | post-mgmt | 2016-2020 |   1.01 | 0.94-1.09 |
+| Quintette | pre-mgmt  | 2002-2015 |   0.94 | 0.91-0.97 |
 
 \#\#Summarize effect of treatments
 
@@ -571,11 +578,10 @@ kz %>%
                           `.variable`%in% "wolf_eff" ~"wolf"))%>%
 rbind(
   qt%>%
-    gather_draws(diff_geom_mean_lambda_post_to_pre,diff_geom_mean_lambda_post_to_pre_iwolf)%>%
+    gather_draws(diff_geom_mean_lambda_post_to_pre)%>%
     median_qi(.width = cri)%>%
     mutate(pop="Quintette",
-         period=case_when(`.variable`%in% "diff_geom_mean_lambda_post_to_pre" ~"wolf",
-                          `.variable`%in% "diff_geom_mean_lambda_post_to_pre_iwolf" ~"iwolf"))
+         period=case_when(`.variable`%in% "diff_geom_mean_lambda_post_to_pre" ~"wolf"))
   )%>%
   mutate_if(is.numeric,function(x) round(x,3))%>%
   select(pop,period,"lambda difference"=".value","lower"=".lower","upper"=".upper")
@@ -586,11 +592,10 @@ kable(summary.effect)
 
 | pop       | period     | lambda difference |   lower | upper |
 | :-------- | :--------- | ----------------: | ------: | ----: |
-| Klinse-Za | wolf + pen |             0.180 |   0.158 | 0.202 |
-| Klinse-Za | pen        |             0.099 |   0.047 | 0.153 |
-| Klinse-Za | wolf       |             0.081 |   0.026 | 0.136 |
+| Klinse-Za | wolf + pen |             0.180 |   0.158 | 0.203 |
+| Klinse-Za | pen        |             0.100 |   0.047 | 0.152 |
+| Klinse-Za | wolf       |             0.080 |   0.026 | 0.135 |
 | Quintette | wolf       |             0.074 | \-0.019 | 0.166 |
-| Quintette | iwolf      |             0.139 |   0.062 | 0.214 |
 
 \#\#Summarize vital rates
 
@@ -693,3 +698,175 @@ kable(summary.vr)
 | Klinse-Za | pre-mgmt             | 1995-2012 |        0.79 | 0.77-0.81 |        0.12 | 0.1-0.13  |                   0.15 | 0.12-0.18    |
 | Quintette | post-mgmt            | 2016-2020 |        0.90 | 0.86-0.93 |        0.18 | 0.15-0.21 |                   0.28 | 0.2-0.38     |
 | Quintette | pre-mgmt             | 2002-2015 |        0.84 | 0.81-0.86 |        0.13 | 0.12-0.14 |                   0.18 | 0.14-0.53    |
+
+\#\#Summarise over periods of improved treatment deliver
+
+``` r
+##KZ Effect INDIVIDUAL
+kz_effects%>%
+  pivot_wider(id_cols=c("Iteration", "Chain"), names_from = "Parameter", values_from = "value")%>%
+  pivot_longer(-c("Iteration", "Chain"))%>%
+  filter(!name%in%c("pen_eff_iwolf"))%>%
+  mutate(name=case_when(name%in%"pen_eff"~"Pen + Wolf",
+                        name%in%"wolf_eff"~"Wolf",
+                        name%in%"wolf_eff_iwolf"~"Refined Wolf",
+                        name%in%"pen_eff_ipen"~"Refined Pen"
+                        ))%>%
+  rename(Treatment=name)%>%
+ggplot(aes(x = value,fill=Treatment)) +
+  geom_density(alpha=0.5) +
+  theme_ipsum()+
+  theme_ipsum()+
+  labs(x="Change in Population Growth", y="Posterior Samples", title="Klinse-Za Individual Treatment Effects")+
+    geom_vline(xintercept = 0, linetype="dashed")+
+  theme(axis.title.x = element_text(size=15),
+        axis.title.y = element_text(size=15),
+        axis.text = element_text(size=10),
+        legend.text = element_text(size=13),
+        legend.title=element_text(size=15))
+```
+
+![](README_files/figure-gfm/summarise%20over%20improved-1.png)<!-- -->
+
+``` r
+ggsave(here::here("plots", "refined_KZ_effect_individudal.png"), width=11, height=5)
+
+#KZ Effect TOGETHER
+kz_effects%>%
+  pivot_wider(id_cols=c("Iteration", "Chain"), names_from = "Parameter", values_from = "value")%>%
+  mutate(pen_eff=pen_eff+wolf_eff,
+         pen_eff_iwolf=pen_eff_iwolf+wolf_eff_iwolf,
+         pen_eff_ipen=pen_eff_ipen+wolf_eff_ipen)%>%
+  pivot_longer(-c("Iteration", "Chain"))%>%
+  mutate(name=case_when(name%in%"pen_eff"~"Pen + Wolf",
+                        name%in%"wolf_eff"~"Wolf",
+                        name%in%"wolf_eff_iwolf"~"Refined Wolf",
+                        name%in%"pen_eff_iwolf"~"Refined Pen + Refined Wolf",
+                        name%in%"pen_eff_ipen"~"Refined Pen + Wolf"
+                        ))%>%
+  rename(Treatment=name)%>%
+ggplot(aes(x = value,fill=Treatment)) +
+  geom_density(alpha=0.5) +
+  theme_ipsum()+
+  theme_ipsum()+
+  labs(x="Change in Population Growth", y="Posterior Samples", title="Klinse-Za Individual Treatment Effects")+
+    geom_vline(xintercept = 0, linetype="dashed")+
+  theme(axis.title.x = element_text(size=15),
+        axis.title.y = element_text(size=15),
+        axis.text = element_text(size=10),
+        legend.text = element_text(size=13),
+        legend.title=element_text(size=15))
+```
+
+![](README_files/figure-gfm/summarise%20over%20improved-2.png)<!-- -->
+
+``` r
+ggsave(here::here("plots", "refined_KZ_effects.png"), width=11, height=5)
+```
+
+\#\#Refined Wolf reduction
+
+``` r
+  ggplot(wolf_effects%>%filter(Parameter%in%"Refined Wolf Control"), aes(x = value,fill=Parameter)) +
+  geom_density(alpha=0.5) +
+  theme_ipsum()+
+  theme_ipsum()+
+  labs(x="Change in Population Growth", y="Posterior Samples", title="Effect of Refined Wolf Control on Population Growth")+
+    geom_vline(xintercept = 0, linetype="dashed")+
+  facet_wrap(vars(Herd), ncol=1)+
+  theme(axis.title.x = element_text(size=15),
+        axis.title.y = element_text(size=15),
+        axis.text = element_text(size=10),
+        legend.text = element_text(size=13),
+        legend.title=element_text(size=15),
+        legend.position = "none")
+```
+
+![](README_files/figure-gfm/Refined%20Wolf%20Control-1.png)<!-- -->
+
+``` r
+ggsave(here::here("plots", "refined_wolf_effect.png"), width=7, height=5)
+```
+
+\#\#Summarize effect of refined treatments
+
+``` r
+summary.effect.refined <- 
+kz %>%
+  gather_draws(diff_geom_mean_lambda_post_to_pre_iwolf,diff_geom_mean_lambda_post_to_pre_ipen,wolf_eff_iwolf,pen_eff_ipen)%>%
+  median_qi(.width = cri)%>%
+  mutate(pop="Klinse-Za",
+         period=case_when(`.variable`%in% "diff_geom_mean_lambda_post_to_pre_iwolf" ~"Refined wolf + Refined pen",
+                          `.variable`%in% "diff_geom_mean_lambda_post_to_pre_ipen" ~"wolf + Refined pen",
+                          `.variable`%in% "wolf_eff_iwolf" ~"Refined wolf",
+                          `.variable`%in% "pen_eff_ipen" ~"Refined pen"))%>%
+rbind(
+  qt%>%
+    gather_draws(diff_geom_mean_lambda_post_to_pre_iwolf)%>%
+    median_qi(.width = cri)%>%
+    mutate(pop="Quintette",
+         period=case_when(`.variable`%in% "diff_geom_mean_lambda_post_to_pre_iwolf" ~"Refined wolf"))
+  )%>%
+  mutate_if(is.numeric,function(x) round(x,3))%>%
+  select(pop,period,"lambda difference"=".value","lower"=".lower","upper"=".upper")
+
+write_csv(summary.effect.refined,here::here("tables", "refined_treatment_effect.csv"))
+kable(summary.effect.refined)
+```
+
+| pop       | period                     | lambda difference |   lower | upper |
+| :-------- | :------------------------- | ----------------: | ------: | ----: |
+| Klinse-Za | wolf + Refined pen         |             0.175 |   0.150 | 0.201 |
+| Klinse-Za | Refined wolf + Refined pen |             0.158 |   0.128 | 0.188 |
+| Klinse-Za | Refined pen                |             0.103 |   0.049 | 0.161 |
+| Klinse-Za | Refined wolf               |             0.045 | \-0.032 | 0.114 |
+| Quintette | Refined wolf               |             0.139 |   0.062 | 0.214 |
+
+\#\#Summarize refined period population growth
+
+``` r
+summary.l.refined <- 
+  kz %>%
+  gather_draws(geom_mean_lambda_prepen,geom_mean_lambda_postpen_iWolf,geom_mean_lambda_postpen_iPen, geom_mean_lambda_SimC_iWolf,geom_mean_lambda_SimPen_iPen)%>%
+  median_qi(.width = cri)%>%
+  mutate(pop="Klinse-Za",
+         period=case_when(`.variable`%in% "geom_mean_lambda_prepen" ~"pre-mgmt",
+                          `.variable`%in% "geom_mean_lambda_postpen_iWolf" ~"post-mgmt (Refined wolf + Refined pen)",
+                          `.variable`%in% "geom_mean_lambda_postpen_iPen" ~"post-mgmt (wolf + Refined pen)",
+                          `.variable`%in% "geom_mean_lambda_SimC_iWolf" ~"post-mgmt (Refined wolf)",
+                          `.variable`%in% "geom_mean_lambda_SimPen_iPen" ~"post-mgmt (Refined pen)")
+         )%>%
+rbind(
+  qt %>%
+  gather_draws(geom_mean_lambda_pre,geom_mean_lambda_post_iwolf)%>%
+  median_qi(.width = cri)%>%
+  mutate(pop="Quintette",
+         period=case_when(`.variable`%in% "geom_mean_lambda_pre" ~"pre-mgmt",
+                          `.variable`%in% "geom_mean_lambda_post_iwolf" ~"post-mgmt (Refined wolf)"))
+    
+  )%>%
+  mutate_if(is.numeric,function(x) round(x,2))%>%
+  select(pop,period,"lambda"=".value","lower"=".lower","upper"=".upper")%>%
+  arrange(pop,period)
+  
+summary.l.refined$Years <- c("2016-2020", "2017-2020","2016-2020", "2017-2020","1996-2013", "2017-2020", "2002-2015")
+colnames(summary.l.refined) <- c("Herd", "Period", "Lambda", "Lamba.Lower", "Lambda.Upper", "Years")
+
+
+summary.l.refined <- summary.l.refined%>%
+  mutate(`90% CrI`=paste(Lamba.Lower,Lambda.Upper, sep="-"))%>%
+  select(Herd, Period, Years, Lambda,`90% CrI`)
+
+write_csv(summary.l.refined,here::here("tables", "refined_lambda.csv"))
+kable(summary.l.refined)
+```
+
+| Herd      | Period                                 | Years     | Lambda | 90% CrI   |
+| :-------- | :------------------------------------- | :-------- | -----: | :-------- |
+| Klinse-Za | post-mgmt (Refined pen)                | 2016-2020 |   1.14 | 1.14-1.14 |
+| Klinse-Za | post-mgmt (Refined wolf + Refined pen) | 2017-2020 |   1.04 | 1.02-1.07 |
+| Klinse-Za | post-mgmt (Refined wolf)               | 2016-2020 |   0.93 | 0.86-1    |
+| Klinse-Za | post-mgmt (wolf + Refined pen)         | 2017-2020 |   1.06 | 1.04-1.09 |
+| Klinse-Za | pre-mgmt                               | 1996-2013 |   0.89 | 0.88-0.89 |
+| Quintette | post-mgmt (Refined wolf)               | 2017-2020 |   1.08 | 1.01-1.14 |
+| Quintette | pre-mgmt                               | 2002-2015 |   0.94 | 0.91-0.97 |

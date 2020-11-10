@@ -209,6 +209,7 @@ for(yr in 2:nyr){
 	   geom_mean_lambda_postwolf <- prod(lambda[20:26])^(1/length(lambda[20:26]))
 	   diff_geom_mean_lambda_post_to_pre <- geom_mean_lambda_postpen - geom_mean_lambda_prepen
 	   diff_geom_mean_lambda_post_to_pre_iwolf <- geom_mean_lambda_postpen_iWolf - geom_mean_lambda_prepen
+	   diff_geom_mean_lambda_post_to_pre_ipen <- geom_mean_lambda_postpen_iPen - geom_mean_lambda_prepen
 	
 	
 	# #  Treatment Simulations
@@ -228,14 +229,20 @@ for(yr in 2:nyr){
 	  tmp1_SimC2_iWolf <- prod(lambdaSimC[4:7])
 	  tmp2_SimC2_iWolf <- 1/length(lambdaSimC[4:7])
 	 geom_mean_lambda_SimC_iWolf <- tmp1_SimC2_iWolf^tmp2_SimC2_iWolf
-
+	 
+	 	 # pen intensity
+	 geom_mean_lambda_postpen_iPen <- prod(lambda[22:26])^(1/length(lambda[22:26]))
+	 geom_mean_lambda_SimPen_iPen <- prod(lambdaSimP[3:7])^(1/length(lambdaSimP[3:7]))
+	  tmp1_SimC2_ipen <- prod(lambdaSimC[3:7])
+	  tmp2_SimC2_ipen <- 1/length(lambdaSimC[3:7])
+	 geom_mean_lambda_SimC_ipen <- tmp1_SimC2_ipen^tmp2_SimC2_ipen
   
  #  Summarize Vital Rates
 	 mean_surv_pre <- prod(S[1:18,1])^(1/length(S[1:18,1]))
 	 mean_surv_pen <- prod(S[20:25,2])^(1/length(S[20:25,2]))
 	 mean_surv_wolf <- prod(S[19:25,1])^(1/length(S[19:25,1]))
 
-##have to use mean here as opposed to geo mean due to derived parameter that goes slightly negative at times at lower CI and causes issues.
+##use mean here as opposed to geo mean due to derived parameter that goes slightly negative at times at lower CI and causes issues.
 	 mean_r_pre <- mean(R[2:19,1])
 	 mean_r_pen <- mean(R[21:26,2])
 	 mean_r_wolf <- mean(R[20:26,1])
@@ -254,6 +261,8 @@ for(yr in 2:nyr){
 	 pen_eff <- diff_geom_mean_lambda_post_to_pre-wolf_eff
 	 wolf_eff_iwolf <-geom_mean_lambda_SimC_iWolf-geom_mean_lambda_prepen
 	 pen_eff_iwolf <- diff_geom_mean_lambda_post_to_pre_iwolf-wolf_eff_iwolf
+	 wolf_eff_ipen <- geom_mean_lambda_SimC_ipen - geom_mean_lambda_prepen
+	 pen_eff_ipen <- diff_geom_mean_lambda_post_to_pre_ipen-wolf_eff_ipen
 
 
 	# #################################################################################

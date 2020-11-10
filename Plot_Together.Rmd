@@ -74,7 +74,7 @@ cri<-0.9
 
 
 ##ABUNDANCE
-```{r Plot results-abundance, results='hide', message=FALSE, warning=FALSE}
+```{r Plot results-abundance, fig.height=8, fig.width=8, message=FALSE, warning=FALSE, results='hide'}
 
 abund_MF <- kz %>%
           spread_draws(totNMF[i]) %>%
@@ -141,11 +141,14 @@ ggplot(rbind(abund_MF,lambda_F),aes(x = yrs, y = est, ymin=lower, ymax=upper, fi
         axis.text = element_text(size=10),
         legend.text = element_text(size=13),
         legend.title=element_text(size=15))+
-    geom_vline(data=data.frame(herd=unique(res_df$herd), year=c(2012.5,2015.5)),aes(xintercept = year),linetype="dashed")
+    geom_vline(data=data.frame(herd=unique(abund_MF$herd),
+                               param=rep(unique(rbind(abund_MF,lambda_F)$param),each=2),
+                               year=rep(c(2012.5,2015.5)),times=2),
+               aes(xintercept = year),linetype="dashed")
 
 
 
-ggsave(here::here("plots", "abundance_MF.png"), width=8, height=10)
+ggsave(here::here("plots", "abundance_MF.png"), width=8, height=8)
 write_csv(abund_MF%>%mutate_if(is.numeric, round, 1), here::here("tables", "abundance_MF.csv"))
 
 write_csv(kz %>%
@@ -161,8 +164,8 @@ write_csv(kz %>%
 
 
 ##ABUNDANCE FIT
-```{r Plot results-abundance fit, results='hide', message=FALSE, warning=FALSE}
-fit_df <- res_df%>%
+```{r Plot results-abundance fit, results='hide', message=FALSE, warning=FALSE,fig.height=5, fig.width=9}
+fit_df <- abund_MF%>%
   mutate(type="modelled")%>%
   #bind on observed data
   ##Estimates
@@ -232,7 +235,7 @@ ggsave(here::here("plots", "abundancefit_MF.png"), width=9, height=5)
 
 
 ##VITAL RATES
-```{r Plot results-vital rates,  message=FALSE, warning=FALSE, results='hide'}
+```{r Plot results-vital rates,  message=FALSE, warning=FALSE, results='hide',fig.height=5, fig.width=9}
 #R
 
 pop_df_r <- rbind(
@@ -323,11 +326,13 @@ ggplot(mod_vr,
     geom_vline(data=data.frame(pop=unique(mod_vr$pop), yrs=c(2013.5,2012.5,2015.5), param="Recruitment")%>%
                  rbind(data.frame(pop=unique(mod_vr$pop), yrs=c(2013.5,2012.5,2015.5), param="Survival")),aes(xintercept = yrs),linetype="dashed")+
     facet_wrap(vars(param, pop), scales="free_y")
+
+ggsave(here::here("plots", "vitalrate_F.png"), width=9, height=5)
 ```
 
 
 ##COMPARE TO RAW VITAL RATE DATA
-```{r Plot results-vital rates vs raw data, results='hide', message=FALSE, warning=FALSE}
+```{r Plot results-vital rates vs raw data, results='hide', message=FALSE, warning=FALSE,fig.height=5, fig.width=9}
 kz_vr%>%mutate(pop=case_when(pop%in%"Free"~"KZ-Wolf",
                              pop%in%"Pen"~"KZ-Wolf + Pen"))%>%
   rbind(qt_vr%>%mutate(pop=case_when(pop%in%"Free"~"QT-Wolf")))%>%
@@ -351,13 +356,13 @@ ggsave(here::here("plots", "vitalratefit_F.png"), width=9, height=5)
 
 
 ##WOLF EFFECT
-```{r wolf, results='hide', message=FALSE, warning=FALSE}
-##Intense Wolf Control== (2017-2020)
+```{r wolf, results='hide', message=FALSE, warning=FALSE,fig.height=5, fig.width=6}
+##Refined Wolf Control== (2017-2020)
 
 S <- ggs(qt$samples)%>%
   filter(Parameter%in%c("diff_geom_mean_lambda_post_to_pre","diff_geom_mean_lambda_post_to_pre_iwolf"))%>%
   mutate(Parameter=case_when(Parameter%in%"diff_geom_mean_lambda_post_to_pre"~"All Wolf Control",
-                             Parameter%in%"diff_geom_mean_lambda_post_to_pre_iwolf"~"Intense Wolf Control"
+                             Parameter%in%"diff_geom_mean_lambda_post_to_pre_iwolf"~"Refined Wolf Control"
                              ),
          Herd="Quintette")
 
@@ -365,13 +370,14 @@ S <- ggs(qt$samples)%>%
 S2 <- ggs(kz$samples)%>%
   filter(Parameter%in%c("wolf_eff","wolf_eff_iwolf"))%>%
     mutate(Parameter=case_when(Parameter%in%"wolf_eff"~"All Wolf Control",
-                             Parameter%in%"wolf_eff_iwolf"~"Intense Wolf Control"
+                             Parameter%in%"wolf_eff_iwolf"~"Refined Wolf Control"
                              ),
          Herd="Klinse-Za")
 
-S3 <- rbind(S,S2)
+wolf_effects <- rbind(S,S2)
+rm(S)
 
-ggplot(S3, aes(x = value,fill=Parameter)) +
+ggplot(wolf_effects%>%filter(Parameter%in%"All Wolf Control"), aes(x = value,fill=Parameter)) +
   geom_density(alpha=0.5) +
   theme_ipsum()+
   theme_ipsum()+
@@ -382,19 +388,22 @@ ggplot(S3, aes(x = value,fill=Parameter)) +
         axis.title.y = element_text(size=15),
         axis.text = element_text(size=10),
         legend.text = element_text(size=13),
-        legend.title=element_text(size=15))
+        legend.title=element_text(size=15),
+        legend.position = "none")
 
-ggsave(here::here("plots", "wolf_effect.png"), width=9, height=5)
+ggsave(here::here("plots", "wolf_effect.png"), width=6, height=5)
+
+
 ```
 
 
 
 ##KZ EFFECT
-```{r kz effect, fig.height=5, fig.width=11, message=FALSE, warning=FALSE, results='hide'}
-S <- ggs(kz$samples)%>%
-  filter(Parameter%in%c("wolf_eff","pen_eff", "wolf_eff_iwolf","pen_eff_iwolf"))
+```{r kz effect, message=FALSE, warning=FALSE, results='hide',fig.height=5, fig.width=11}
+kz_effects <- ggs(kz$samples)%>%
+  filter(Parameter%in%c("wolf_eff","pen_eff", "wolf_eff_iwolf","pen_eff_iwolf","pen_eff_ipen","wolf_eff_ipen"))
 
-a <- S%>%
+a <- kz_effects%>%
   pivot_wider(id_cols=c("Iteration", "Chain"), names_from = "Parameter", values_from = "value")%>%
   mutate(pen_eff=pen_eff+wolf_eff,
          pen_eff_iwolf=pen_eff_iwolf+wolf_eff_iwolf)%>%
@@ -477,7 +486,7 @@ kable(summary.sim)
 
 
 ##Wolf vs Pen effect
-```{r Wolf vs Pen effect, results='hide', message=FALSE, warning=FALSE}
+```{r Wolf vs Pen effect, results='hide', message=FALSE, warning=FALSE,fig.height=5, fig.width=7}
 S <- ggs(kz$samples)%>%
   filter(Parameter%in%c("wolf_eff_proportion","pen_eff_proportion"))
 
@@ -497,8 +506,8 @@ ggplot(aes(x = value,fill=Treatment)) +
 
 ggsave(here::here("plots", "KZ_effect_prop.png"), width=7, height=5)
 
-#kz$mean$wolf_eff_proportion
-#kz$mean$pen_eff_proportion
+kz$mean$wolf_eff_proportion
+kz$mean$pen_eff_proportion
 ```
 
 
@@ -515,19 +524,18 @@ summary.l <-
                           `.variable`%in% "geom_mean_lambda_postpen" ~"post-mgmt"))%>%
 rbind(
   qt %>%
-  gather_draws(geom_mean_lambda_pre,geom_mean_lambda_post,geom_mean_lambda_post_iwolf)%>%
+  gather_draws(geom_mean_lambda_pre,geom_mean_lambda_post)%>%
   median_qi(.width = cri)%>%
   mutate(pop="Quintette",
          period=case_when(`.variable`%in% "geom_mean_lambda_pre" ~"pre-mgmt",
-                          `.variable`%in% "geom_mean_lambda_post" ~"post-mgmt",
-                          `.variable`%in% "geom_mean_lambda_post_iwolf" ~"post-mgmt_iwolf"))
+                          `.variable`%in% "geom_mean_lambda_post" ~"post-mgmt"))
     
   )%>%
   mutate_if(is.numeric,function(x) round(x,2))%>%
   select(pop,period,"lambda"=".value","lower"=".lower","upper"=".upper")%>%
   arrange(pop,period)
   
-summary.l$Years <- c("2014-2020", "1996-2012", "2016-2020", "2017-2020", "2002-2015")
+summary.l$Years <- c("2014-2020", "1996-2012", "2016-2020", "2002-2015")
 colnames(summary.l) <- c("Herd", "Period", "Lambda", "Lamba.Lower", "Lambda.Upper", "Years")
 
 
@@ -552,11 +560,10 @@ kz %>%
                           `.variable`%in% "wolf_eff" ~"wolf"))%>%
 rbind(
   qt%>%
-    gather_draws(diff_geom_mean_lambda_post_to_pre,diff_geom_mean_lambda_post_to_pre_iwolf)%>%
+    gather_draws(diff_geom_mean_lambda_post_to_pre)%>%
     median_qi(.width = cri)%>%
     mutate(pop="Quintette",
-         period=case_when(`.variable`%in% "diff_geom_mean_lambda_post_to_pre" ~"wolf",
-                          `.variable`%in% "diff_geom_mean_lambda_post_to_pre_iwolf" ~"iwolf"))
+         period=case_when(`.variable`%in% "diff_geom_mean_lambda_post_to_pre" ~"wolf"))
   )%>%
   mutate_if(is.numeric,function(x) round(x,3))%>%
   select(pop,period,"lambda difference"=".value","lower"=".lower","upper"=".upper")
@@ -654,4 +661,148 @@ colnames(summary.vr) <- c("Group", "Period", "Years", "AF Survival","90% CrI", "
 
 write_csv(summary.vr,here::here("tables", "vital_rates.csv"))
 kable(summary.vr)
+```
+
+
+
+##Summarise over periods of improved treatment deliver
+```{r summarise over improved,  message=FALSE, warning=FALSE, fig.height=5, fig.width=11}
+##KZ Effect INDIVIDUAL
+kz_effects%>%
+  pivot_wider(id_cols=c("Iteration", "Chain"), names_from = "Parameter", values_from = "value")%>%
+  pivot_longer(-c("Iteration", "Chain"))%>%
+  filter(!name%in%c("pen_eff_iwolf"))%>%
+  mutate(name=case_when(name%in%"pen_eff"~"Pen + Wolf",
+                        name%in%"wolf_eff"~"Wolf",
+                        name%in%"wolf_eff_iwolf"~"Refined Wolf",
+                        name%in%"pen_eff_ipen"~"Refined Pen"
+                        ))%>%
+  rename(Treatment=name)%>%
+ggplot(aes(x = value,fill=Treatment)) +
+  geom_density(alpha=0.5) +
+  theme_ipsum()+
+  theme_ipsum()+
+  labs(x="Change in Population Growth", y="Posterior Samples", title="Klinse-Za Individual Treatment Effects")+
+    geom_vline(xintercept = 0, linetype="dashed")+
+  theme(axis.title.x = element_text(size=15),
+        axis.title.y = element_text(size=15),
+        axis.text = element_text(size=10),
+        legend.text = element_text(size=13),
+        legend.title=element_text(size=15))
+
+ggsave(here::here("plots", "refined_KZ_effect_individudal.png"), width=11, height=5)
+
+#KZ Effect TOGETHER
+kz_effects%>%
+  pivot_wider(id_cols=c("Iteration", "Chain"), names_from = "Parameter", values_from = "value")%>%
+  mutate(pen_eff=pen_eff+wolf_eff,
+         pen_eff_iwolf=pen_eff_iwolf+wolf_eff_iwolf,
+         pen_eff_ipen=pen_eff_ipen+wolf_eff_ipen)%>%
+  pivot_longer(-c("Iteration", "Chain"))%>%
+  mutate(name=case_when(name%in%"pen_eff"~"Pen + Wolf",
+                        name%in%"wolf_eff"~"Wolf",
+                        name%in%"wolf_eff_iwolf"~"Refined Wolf",
+                        name%in%"pen_eff_iwolf"~"Refined Pen + Refined Wolf",
+                        name%in%"pen_eff_ipen"~"Refined Pen + Wolf"
+                        ))%>%
+  rename(Treatment=name)%>%
+ggplot(aes(x = value,fill=Treatment)) +
+  geom_density(alpha=0.5) +
+  theme_ipsum()+
+  theme_ipsum()+
+  labs(x="Change in Population Growth", y="Posterior Samples", title="Klinse-Za Individual Treatment Effects")+
+    geom_vline(xintercept = 0, linetype="dashed")+
+  theme(axis.title.x = element_text(size=15),
+        axis.title.y = element_text(size=15),
+        axis.text = element_text(size=10),
+        legend.text = element_text(size=13),
+        legend.title=element_text(size=15))
+
+ggsave(here::here("plots", "refined_KZ_effects.png"), width=11, height=5)
+```
+
+##Refined Wolf reduction
+```{r Refined Wolf Control,  message=FALSE, warning=FALSE, fig.height=5, fig.width=7}
+  ggplot(wolf_effects%>%filter(Parameter%in%"Refined Wolf Control"), aes(x = value,fill=Parameter)) +
+  geom_density(alpha=0.5) +
+  theme_ipsum()+
+  theme_ipsum()+
+  labs(x="Change in Population Growth", y="Posterior Samples", title="Effect of Refined Wolf Control on Population Growth")+
+    geom_vline(xintercept = 0, linetype="dashed")+
+  facet_wrap(vars(Herd), ncol=1)+
+  theme(axis.title.x = element_text(size=15),
+        axis.title.y = element_text(size=15),
+        axis.text = element_text(size=10),
+        legend.text = element_text(size=13),
+        legend.title=element_text(size=15),
+        legend.position = "none")
+
+ggsave(here::here("plots", "refined_wolf_effect.png"), width=7, height=5)
+```
+
+
+##Summarize effect of refined treatments
+```{r refined effects, results='asis'}
+
+summary.effect.refined <- 
+kz %>%
+  gather_draws(diff_geom_mean_lambda_post_to_pre_iwolf,diff_geom_mean_lambda_post_to_pre_ipen,wolf_eff_iwolf,pen_eff_ipen)%>%
+  median_qi(.width = cri)%>%
+  mutate(pop="Klinse-Za",
+         period=case_when(`.variable`%in% "diff_geom_mean_lambda_post_to_pre_iwolf" ~"Refined wolf + Refined pen",
+                          `.variable`%in% "diff_geom_mean_lambda_post_to_pre_ipen" ~"wolf + Refined pen",
+                          `.variable`%in% "wolf_eff_iwolf" ~"Refined wolf",
+                          `.variable`%in% "pen_eff_ipen" ~"Refined pen"))%>%
+rbind(
+  qt%>%
+    gather_draws(diff_geom_mean_lambda_post_to_pre_iwolf)%>%
+    median_qi(.width = cri)%>%
+    mutate(pop="Quintette",
+         period=case_when(`.variable`%in% "diff_geom_mean_lambda_post_to_pre_iwolf" ~"Refined wolf"))
+  )%>%
+  mutate_if(is.numeric,function(x) round(x,3))%>%
+  select(pop,period,"lambda difference"=".value","lower"=".lower","upper"=".upper")
+
+write_csv(summary.effect.refined,here::here("tables", "refined_treatment_effect.csv"))
+kable(summary.effect.refined)
+```
+
+  
+##Summarize refined period population growth
+```{r Summarise refined growth rates, results='asis'}
+
+summary.l.refined <- 
+  kz %>%
+  gather_draws(geom_mean_lambda_prepen,geom_mean_lambda_postpen_iWolf,geom_mean_lambda_postpen_iPen, geom_mean_lambda_SimC_iWolf,geom_mean_lambda_SimPen_iPen)%>%
+  median_qi(.width = cri)%>%
+  mutate(pop="Klinse-Za",
+         period=case_when(`.variable`%in% "geom_mean_lambda_prepen" ~"pre-mgmt",
+                          `.variable`%in% "geom_mean_lambda_postpen_iWolf" ~"post-mgmt (Refined wolf + Refined pen)",
+                          `.variable`%in% "geom_mean_lambda_postpen_iPen" ~"post-mgmt (wolf + Refined pen)",
+                          `.variable`%in% "geom_mean_lambda_SimC_iWolf" ~"post-mgmt (Refined wolf)",
+                          `.variable`%in% "geom_mean_lambda_SimPen_iPen" ~"post-mgmt (Refined pen)")
+         )%>%
+rbind(
+  qt %>%
+  gather_draws(geom_mean_lambda_pre,geom_mean_lambda_post_iwolf)%>%
+  median_qi(.width = cri)%>%
+  mutate(pop="Quintette",
+         period=case_when(`.variable`%in% "geom_mean_lambda_pre" ~"pre-mgmt",
+                          `.variable`%in% "geom_mean_lambda_post_iwolf" ~"post-mgmt (Refined wolf)"))
+    
+  )%>%
+  mutate_if(is.numeric,function(x) round(x,2))%>%
+  select(pop,period,"lambda"=".value","lower"=".lower","upper"=".upper")%>%
+  arrange(pop,period)
+  
+summary.l.refined$Years <- c("2016-2020", "2017-2020","2016-2020", "2017-2020","1996-2013", "2017-2020", "2002-2015")
+colnames(summary.l.refined) <- c("Herd", "Period", "Lambda", "Lamba.Lower", "Lambda.Upper", "Years")
+
+
+summary.l.refined <- summary.l.refined%>%
+  mutate(`90% CrI`=paste(Lamba.Lower,Lambda.Upper, sep="-"))%>%
+  select(Herd, Period, Years, Lambda,`90% CrI`)
+
+write_csv(summary.l.refined,here::here("tables", "refined_lambda.csv"))
+kable(summary.l.refined)
 ```
