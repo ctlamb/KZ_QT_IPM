@@ -710,7 +710,7 @@ kz_effects%>%
   pivot_wider(id_cols=c("Iteration", "Chain"), names_from = "Parameter", values_from = "value")%>%
   pivot_longer(-c("Iteration", "Chain"))%>%
   filter(!name%in%c("pen_eff_iwolf"," wolf_eff_ipen"))%>%
-  mutate(name=case_when(name%in%"pen_eff"~"Pen + Wolf",
+  mutate(name=case_when(name%in%"pen_eff"~"Pen",
                         name%in%"wolf_eff"~"Wolf",
                         name%in%"wolf_eff_iwolf"~"Refined Wolf",
                         name%in%"pen_eff_ipen"~"Refined Pen"
@@ -803,10 +803,10 @@ kz %>%
   gather_draws(diff_geom_mean_lambda_post_to_pre_iwolf,diff_geom_mean_lambda_post_to_pre_ipen,wolf_eff_iwolf,pen_eff_ipen)%>%
   median_qi(.width = cri)%>%
   mutate(pop="Klinse-Za",
-         period=case_when(`.variable`%in% "diff_geom_mean_lambda_post_to_pre_iwolf" ~"Refined wolf + Refined pen",
-                          `.variable`%in% "diff_geom_mean_lambda_post_to_pre_ipen" ~"wolf + Refined pen",
-                          `.variable`%in% "wolf_eff_iwolf" ~"Refined wolf",
-                          `.variable`%in% "pen_eff_ipen" ~"Refined pen"))%>%
+         period=case_when(`.variable`%in% "diff_geom_mean_lambda_post_to_pre_iwolf" ~"refined wolf + refined pen",
+                          `.variable`%in% "diff_geom_mean_lambda_post_to_pre_ipen" ~"wolf + refined pen",
+                          `.variable`%in% "wolf_eff_iwolf" ~"refined wolf",
+                          `.variable`%in% "pen_eff_ipen" ~"refined pen"))%>%
 rbind(
   qt%>%
     gather_draws(diff_geom_mean_lambda_post_to_pre_iwolf)%>%
@@ -823,10 +823,10 @@ kable(summary.effect.refined)
 
 | pop       | period                     | lambda difference |   lower | upper |
 | :-------- | :------------------------- | ----------------: | ------: | ----: |
-| Klinse-Za | wolf + Refined pen         |             0.175 |   0.150 | 0.200 |
-| Klinse-Za | Refined wolf + Refined pen |             0.158 |   0.128 | 0.188 |
-| Klinse-Za | Refined pen                |             0.103 |   0.048 | 0.161 |
-| Klinse-Za | Refined wolf               |             0.045 | \-0.032 | 0.115 |
+| Klinse-Za | wolf + refined pen         |             0.175 |   0.150 | 0.200 |
+| Klinse-Za | refined wolf + refined pen |             0.158 |   0.128 | 0.188 |
+| Klinse-Za | refined pen                |             0.103 |   0.048 | 0.161 |
+| Klinse-Za | refined wolf               |             0.045 | \-0.032 | 0.115 |
 | Quintette | Refined wolf               |             0.139 |   0.062 | 0.214 |
 
 \#\#Summarize refined period population growth
@@ -838,10 +838,10 @@ summary.l.refined <-
   median_qi(.width = cri)%>%
   mutate(pop="Klinse-Za",
          period=case_when(`.variable`%in% "geom_mean_lambda_prepen" ~"pre-mgmt",
-                          `.variable`%in% "geom_mean_lambda_postpen_iWolf" ~"post-mgmt (Refined wolf + Refined pen)",
-                          `.variable`%in% "geom_mean_lambda_postpen_iPen" ~"post-mgmt (wolf + Refined pen)",
-                          `.variable`%in% "geom_mean_lambda_SimC_iWolf" ~"post-mgmt (Refined wolf)",
-                          `.variable`%in% "geom_mean_lambda_SimPen_iPen" ~"post-mgmt (Refined pen)")
+                          `.variable`%in% "geom_mean_lambda_postpen_iWolf" ~"post-mgmt (refined wolf + refined pen)",
+                          `.variable`%in% "geom_mean_lambda_postpen_iPen" ~"post-mgmt (wolf + refined pen)",
+                          `.variable`%in% "geom_mean_lambda_SimC_iWolf" ~"post-mgmt (refined wolf)",
+                          `.variable`%in% "geom_mean_lambda_SimPen_iPen" ~"post-mgmt (refined pen)")
          )%>%
 rbind(
   qt %>%
@@ -849,14 +849,14 @@ rbind(
   median_qi(.width = cri)%>%
   mutate(pop="Quintette",
          period=case_when(`.variable`%in% "geom_mean_lambda_pre" ~"pre-mgmt",
-                          `.variable`%in% "geom_mean_lambda_post_iwolf" ~"post-mgmt (Refined wolf)"))
+                          `.variable`%in% "geom_mean_lambda_post_iwolf" ~"post-mgmt (refined wolf)"))
     
   )%>%
   mutate_if(is.numeric,function(x) round(x,2))%>%
   select(pop,period,"lambda"=".value","lower"=".lower","upper"=".upper")%>%
   arrange(pop,period)
   
-summary.l.refined$Years <- c("2016-2020", "2017-2020","2016-2020", "2017-2020","1996-2013", "2017-2020", "2002-2015")
+summary.l.refined$Years <- c("2016-2020", "2017-2020","2017-2020", "2016-2020","1996-2013", "2017-2020", "2002-2015")
 colnames(summary.l.refined) <- c("Herd", "Period", "Lambda", "Lamba.Lower", "Lambda.Upper", "Years")
 
 
@@ -870,10 +870,10 @@ kable(summary.l.refined)
 
 | Herd      | Period                                 | Years     | Lambda | 90% CrI   |
 | :-------- | :------------------------------------- | :-------- | -----: | :-------- |
-| Klinse-Za | post-mgmt (Refined pen)                | 2016-2020 |   1.14 | 1.14-1.14 |
-| Klinse-Za | post-mgmt (Refined wolf + Refined pen) | 2017-2020 |   1.04 | 1.02-1.07 |
-| Klinse-Za | post-mgmt (Refined wolf)               | 2016-2020 |   0.93 | 0.85-1    |
-| Klinse-Za | post-mgmt (wolf + Refined pen)         | 2017-2020 |   1.06 | 1.04-1.09 |
+| Klinse-Za | post-mgmt (refined pen)                | 2016-2020 |   1.14 | 1.14-1.14 |
+| Klinse-Za | post-mgmt (refined wolf + refined pen) | 2017-2020 |   1.04 | 1.02-1.07 |
+| Klinse-Za | post-mgmt (refined wolf)               | 2017-2020 |   0.93 | 0.85-1    |
+| Klinse-Za | post-mgmt (wolf + refined pen)         | 2016-2020 |   1.06 | 1.04-1.09 |
 | Klinse-Za | pre-mgmt                               | 1996-2013 |   0.89 | 0.88-0.89 |
-| Quintette | post-mgmt (Refined wolf)               | 2017-2020 |   1.08 | 1.01-1.14 |
+| Quintette | post-mgmt (refined wolf)               | 2017-2020 |   1.08 | 1.01-1.14 |
 | Quintette | pre-mgmt                               | 2002-2015 |   0.94 | 0.91-0.97 |
