@@ -92,7 +92,7 @@ lambda_F <- kz %>%
           spread_draws(lambda[i]) %>%
           median_qi(.width = cri)%>%
                      mutate(
-                     param="Population Growth (F)",
+                     param="Population growth (F)",
                      herd="Klinse-Za")%>%
   cbind(kz_yr_df)%>%
   rbind(
@@ -100,7 +100,7 @@ lambda_F <- kz %>%
           spread_draws(lambda[i]) %>%
           median_qi(.width = cri)%>%
                      mutate(
-                     param="Population Growth (F)",
+                     param="Population growth (F)",
                      herd="Quintette")%>%
       cbind(qt_yr_df))%>%
   rename("lower" = ".lower",
@@ -130,7 +130,7 @@ ggplot(rbind(abund_MF,lambda_F),aes(x = yrs, y = est, ymin=lower, ymax=upper, fi
         axis.title.y = element_text(size=15),
         strip.text.x = element_text(size=15),
         strip.text.y = element_text(size=15),
-        axis.text = element_text(size=10),
+                axis.text.y = element_blank(),         axis.text.x = element_text(size=10),
         legend.text = element_text(size=13),
         legend.title=element_text(size=15))+
     geom_vline(data=data.frame(herd=unique(abund_MF$herd),
@@ -376,17 +376,19 @@ S2 <- ggs(kz$samples)%>%
 
 wolf_effects <- rbind(S,S2)
 rm(S)
+rm(S2)
 
 ggplot(wolf_effects%>%filter(Parameter%in%"All Wolf Control"), aes(x = value,fill=Parameter)) +
   geom_density(alpha=0.5) +
   theme_ipsum()+
   theme_ipsum()+
-  labs(x="Change in Population Growth", y="Posterior Samples", title="Effect of Wolf Control on Population Growth")+
+  labs(x="Change in population growth", y="Posterior sample density", title="Effect of Wolf Control on Population Growth")+
     geom_vline(xintercept = 0, linetype="dashed")+
   facet_wrap(vars(Herd), ncol=1)+
   theme(axis.title.x = element_text(size=15),
         axis.title.y = element_text(size=15),
-        axis.text = element_text(size=10),
+        axis.text.y = element_blank(),
+        axis.text.x = element_text(size=10),
         legend.text = element_text(size=13),
         legend.title=element_text(size=15),
         legend.position = "none")
@@ -417,11 +419,12 @@ ggplot(aes(x = value,fill=Treatment)) +
   geom_density(alpha=0.5) +
   theme_ipsum()+
   theme_ipsum()+
-  labs(x="Change in Population Growth", y="Posterior Samples", title="Klinse-Za Treatment Effects")+
+  labs(x="Change in population growth", y="Posterior sample density", title="Klinse-Za Treatment Effects")+
     geom_vline(xintercept = 0, linetype="dashed")+
   theme(axis.title.x = element_text(size=15),
         axis.title.y = element_text(size=15),
-        axis.text = element_text(size=10),
+        axis.text.y = element_blank(),
+        axis.text.x = element_text(size=10),
         legend.text = element_text(size=13),
         legend.title=element_text(size=15))
 
@@ -505,11 +508,11 @@ S%>%
 ggplot(aes(x = value,fill=Treatment)) +
   geom_density(alpha=0.5) +
   theme_ipsum()+
-  labs(x="Proportion", y="Posterior Samples", title="Proportion Increase Attributable to Treatment")+
+  labs(x="Proportion", y="Posterior sample density", title="Proportion Increase Attributable to Treatment")+
   xlim(0,1)+
   theme(axis.title.x = element_text(size=15),
         axis.title.y = element_text(size=15),
-        axis.text = element_text(size=10),
+                axis.text.y = element_blank(),         axis.text.x = element_text(size=10),
         legend.text = element_text(size=13),
         legend.title=element_text(size=15))
 ```
@@ -528,11 +531,11 @@ kz$mean$pen_eff_proportion
 ``` r
 summary.l <- 
   kz %>%
-  gather_draws(geom_mean_lambda_prepen,geom_mean_lambda_postpen)%>%
+  gather_draws(geom_mean_lambda_prepen,geom_mean_lambda_postwolf)%>%
   median_qi(.width = cri)%>%
   mutate(pop="Klinse-Za",
          period=case_when(`.variable`%in% "geom_mean_lambda_prepen" ~"pre-mgmt",
-                          `.variable`%in% "geom_mean_lambda_postpen" ~"post-mgmt"))%>%
+                          `.variable`%in% "geom_mean_lambda_postwolf" ~"post-mgmt"))%>%
 rbind(
   qt %>%
   gather_draws(geom_mean_lambda_pre,geom_mean_lambda_post)%>%
@@ -592,9 +595,9 @@ kable(summary.effect)
 
 | pop       | period     | lambda difference |   lower | upper |
 | :-------- | :--------- | ----------------: | ------: | ----: |
-| Klinse-Za | wolf + pen |             0.180 |   0.158 | 0.203 |
-| Klinse-Za | pen        |             0.100 |   0.047 | 0.152 |
-| Klinse-Za | wolf       |             0.080 |   0.026 | 0.135 |
+| Klinse-Za | wolf + pen |             0.182 |   0.160 | 0.205 |
+| Klinse-Za | pen        |             0.101 |   0.051 | 0.152 |
+| Klinse-Za | wolf       |             0.081 |   0.026 | 0.136 |
 | Quintette | wolf       |             0.074 | \-0.019 | 0.166 |
 
 \#\#Summarize vital rates
@@ -706,7 +709,7 @@ kable(summary.vr)
 kz_effects%>%
   pivot_wider(id_cols=c("Iteration", "Chain"), names_from = "Parameter", values_from = "value")%>%
   pivot_longer(-c("Iteration", "Chain"))%>%
-  filter(!name%in%c("pen_eff_iwolf"))%>%
+  filter(!name%in%c("pen_eff_iwolf"," wolf_eff_ipen"))%>%
   mutate(name=case_when(name%in%"pen_eff"~"Pen + Wolf",
                         name%in%"wolf_eff"~"Wolf",
                         name%in%"wolf_eff_iwolf"~"Refined Wolf",
@@ -717,11 +720,12 @@ ggplot(aes(x = value,fill=Treatment)) +
   geom_density(alpha=0.5) +
   theme_ipsum()+
   theme_ipsum()+
-  labs(x="Change in Population Growth", y="Posterior Samples", title="Klinse-Za Individual Treatment Effects")+
+  labs(x="Change in population growth", y="Posterior sample density", title="Klinse-Za Individual Treatment Effects")+
     geom_vline(xintercept = 0, linetype="dashed")+
   theme(axis.title.x = element_text(size=15),
         axis.title.y = element_text(size=15),
-        axis.text = element_text(size=10),
+        axis.text.y = element_blank(),
+        axis.text.x = element_text(size=10),
         legend.text = element_text(size=13),
         legend.title=element_text(size=15))
 ```
@@ -738,22 +742,25 @@ kz_effects%>%
          pen_eff_iwolf=pen_eff_iwolf+wolf_eff_iwolf,
          pen_eff_ipen=pen_eff_ipen+wolf_eff_ipen)%>%
   pivot_longer(-c("Iteration", "Chain"))%>%
+      filter(!name%in%c("wolf_eff_ipen"))%>%
   mutate(name=case_when(name%in%"pen_eff"~"Pen + Wolf",
                         name%in%"wolf_eff"~"Wolf",
                         name%in%"wolf_eff_iwolf"~"Refined Wolf",
                         name%in%"pen_eff_iwolf"~"Refined Pen + Refined Wolf",
                         name%in%"pen_eff_ipen"~"Refined Pen + Wolf"
                         ))%>%
+    filter(!name%in%c("pen_eff_iwolf"," wolf_eff_ipen"))%>%
   rename(Treatment=name)%>%
 ggplot(aes(x = value,fill=Treatment)) +
   geom_density(alpha=0.5) +
   theme_ipsum()+
   theme_ipsum()+
-  labs(x="Change in Population Growth", y="Posterior Samples", title="Klinse-Za Individual Treatment Effects")+
+  labs(x="Change in population growth", y="Posterior sample density", title="Klinse-Za Individual Treatment Effects")+
     geom_vline(xintercept = 0, linetype="dashed")+
   theme(axis.title.x = element_text(size=15),
         axis.title.y = element_text(size=15),
-        axis.text = element_text(size=10),
+        axis.text.y = element_blank(),
+        axis.text.x = element_text(size=10),
         legend.text = element_text(size=13),
         legend.title=element_text(size=15))
 ```
@@ -771,12 +778,12 @@ ggsave(here::here("plots", "refined_KZ_effects.png"), width=11, height=5)
   geom_density(alpha=0.5) +
   theme_ipsum()+
   theme_ipsum()+
-  labs(x="Change in Population Growth", y="Posterior Samples", title="Effect of Refined Wolf Control on Population Growth")+
+  labs(x="Change in population growth", y="Posterior sample density", title="Effect of Refined Wolf Control on Population Growth")+
     geom_vline(xintercept = 0, linetype="dashed")+
   facet_wrap(vars(Herd), ncol=1)+
   theme(axis.title.x = element_text(size=15),
         axis.title.y = element_text(size=15),
-        axis.text = element_text(size=10),
+                axis.text.y = element_blank(),         axis.text.x = element_text(size=10),
         legend.text = element_text(size=13),
         legend.title=element_text(size=15),
         legend.position = "none")
@@ -816,10 +823,10 @@ kable(summary.effect.refined)
 
 | pop       | period                     | lambda difference |   lower | upper |
 | :-------- | :------------------------- | ----------------: | ------: | ----: |
-| Klinse-Za | wolf + Refined pen         |             0.175 |   0.150 | 0.201 |
+| Klinse-Za | wolf + Refined pen         |             0.175 |   0.150 | 0.200 |
 | Klinse-Za | Refined wolf + Refined pen |             0.158 |   0.128 | 0.188 |
-| Klinse-Za | Refined pen                |             0.103 |   0.049 | 0.161 |
-| Klinse-Za | Refined wolf               |             0.045 | \-0.032 | 0.114 |
+| Klinse-Za | Refined pen                |             0.103 |   0.048 | 0.161 |
+| Klinse-Za | Refined wolf               |             0.045 | \-0.032 | 0.115 |
 | Quintette | Refined wolf               |             0.139 |   0.062 | 0.214 |
 
 \#\#Summarize refined period population growth
@@ -865,7 +872,7 @@ kable(summary.l.refined)
 | :-------- | :------------------------------------- | :-------- | -----: | :-------- |
 | Klinse-Za | post-mgmt (Refined pen)                | 2016-2020 |   1.14 | 1.14-1.14 |
 | Klinse-Za | post-mgmt (Refined wolf + Refined pen) | 2017-2020 |   1.04 | 1.02-1.07 |
-| Klinse-Za | post-mgmt (Refined wolf)               | 2016-2020 |   0.93 | 0.86-1    |
+| Klinse-Za | post-mgmt (Refined wolf)               | 2016-2020 |   0.93 | 0.85-1    |
 | Klinse-Za | post-mgmt (wolf + Refined pen)         | 2017-2020 |   1.06 | 1.04-1.09 |
 | Klinse-Za | pre-mgmt                               | 1996-2013 |   0.89 | 0.88-0.89 |
 | Quintette | post-mgmt (Refined wolf)               | 2017-2020 |   1.08 | 1.01-1.14 |

@@ -207,7 +207,7 @@ for(yr in 2:nyr){
 		 geom_mean_lambda_prepen <- prod(lambda[2:19])^(1/length(lambda[2:19]))
 	   geom_mean_lambda_postpen <- prod(lambda[21:26])^(1/length(lambda[21:26]))
 	   geom_mean_lambda_postwolf <- prod(lambda[20:26])^(1/length(lambda[20:26]))
-	   diff_geom_mean_lambda_post_to_pre <- geom_mean_lambda_postpen - geom_mean_lambda_prepen
+	   diff_geom_mean_lambda_post_to_pre <- geom_mean_lambda_postwolf - geom_mean_lambda_prepen
 	   diff_geom_mean_lambda_post_to_pre_iwolf <- geom_mean_lambda_postpen_iWolf - geom_mean_lambda_prepen
 	   diff_geom_mean_lambda_post_to_pre_ipen <- geom_mean_lambda_postpen_iPen - geom_mean_lambda_prepen
 	
