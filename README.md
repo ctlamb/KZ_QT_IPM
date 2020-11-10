@@ -130,13 +130,16 @@ ggplot(rbind(abund_MF,lambda_F),aes(x = yrs, y = est, ymin=lower, ymax=upper, fi
         axis.title.y = element_text(size=15),
         strip.text.x = element_text(size=15),
         strip.text.y = element_text(size=15),
-                axis.text.y = element_blank(),         axis.text.x = element_text(size=10),
         legend.text = element_text(size=13),
         legend.title=element_text(size=15))+
     geom_vline(data=data.frame(herd=unique(abund_MF$herd),
                                param=rep(unique(rbind(abund_MF,lambda_F)$param),each=2),
                                year=rep(c(2012.5,2015.5)),times=2),
-               aes(xintercept = year),linetype="dashed")
+               aes(xintercept = year),linetype="dashed")+
+      geom_vline(data=data.frame(herd=unique(abund_MF$herd),
+                               param=rep(unique(rbind(abund_MF,lambda_F)$param),each=2),
+                               year=rep(c(2013.5,NA)),times=2),
+               aes(xintercept = year),linetype="solid")
 ```
 
 ![](README_files/figure-gfm/Plot%20results-abundance-1.png)<!-- -->
@@ -463,6 +466,76 @@ ggarrange(a,b,labels="AUTO")
 ``` r
 ggsave(here::here("plots", "KZ_effect_and_sim.png"), width=11, height=5)
 ```
+
+## AGE STRUCTURE
+
+``` r
+pop_age <-as.data.frame(kz$mean$N[,,1])%>%
+  mutate(pop="Free",
+         year=kz_yr_df$yrs)%>%
+  pivot_longer(-c("pop","year"))%>%
+  mutate(name=str_sub(name,2,-1))%>%
+rbind(
+  as.data.frame(kz$mean$N[,,2])%>%
+  mutate(pop="Pen",
+         year=kz_yr_df$yrs)%>%
+  pivot_longer(-c("pop","year"))%>%
+  mutate(name=str_sub(name,2,-1))
+)%>%
+  mutate(herd="Klinse-Za")%>%
+  rbind(as.data.frame(qt$mean$N[,,1])%>%
+  mutate(pop="Free",
+         year=qt_yr_df$yrs)%>%
+  pivot_longer(-c("pop","year"))%>%
+  mutate(name=str_sub(name,2,-1),
+         herd="Quintette"))%>%
+  mutate(name=case_when(name=="1"~"Juvenile",
+                        name=="2"~"Sub-adult",
+                        name=="3"~"Adult"),
+         name=fct_relevel(name, "Adult","Sub-adult","Juvenile"))
+  
+
+
+
+pop_age%>%
+  group_by(pop,year,herd)%>%
+  mutate(sum=sum(value),
+         value2=value/sum)%>%
+  mutate(Ageclass=name)%>%
+  ggplot(aes(x=year, y=value2, fill = Ageclass)) +
+  geom_area()+
+  ylab("Proportion in each ageclass")+
+  xlab("Year")+
+  facet_wrap(vars(herd,pop),nrow=3)+
+    theme_ipsum()+
+    theme(axis.title.x = element_text(size=15),
+        axis.title.y = element_text(size=15),
+        axis.text = element_text(size=10),
+        legend.text = element_text(size=13),
+        legend.title=element_blank())
+```
+
+![](README_files/figure-gfm/Age%20structure-1.png)<!-- -->
+
+``` r
+ggsave(here::here("plots", "AgeStructure.png"), width=6, height=11)
+
+pop_age%>%
+  filter(year>2013)%>%
+  ggplot(aes(x=year, y=value, fill = name)) +
+  geom_area()+
+  ylab("Abundance")+
+  xlab("Year")+
+  facet_wrap(vars(herd,pop),nrow=3, scales="free_y")+
+    theme_ipsum()+
+    theme(axis.title.x = element_text(size=15),
+        axis.title.y = element_text(size=15),
+        axis.text = element_text(size=10),
+        legend.text = element_text(size=13),
+        legend.title=element_blank())
+```
+
+![](README_files/figure-gfm/Age%20structure-2.png)<!-- -->
 
 \#\#Summarize simultion population growth
 
