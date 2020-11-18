@@ -1,4 +1,4 @@
 Herd,Period,Lambda,90% CrI
-Klinse-Za,Control,0.89,0.88-0.89
+Klinse-Za,Control,0.89,0.88-0.9
 Klinse-Za,Wolf,0.97,0.91-1.02
 Klinse-Za,Wolf+Pen,1.1,1.1-1.1

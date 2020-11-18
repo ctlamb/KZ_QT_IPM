@@ -1,7 +1,7 @@
 KZ and QT IPM results
 ================
 Sara Williams, Hans Martin, and Clayton Lamb
-09 November, 2020
+18 November, 2020
 
 \#See folders KZ and QT for the IPM’s for each herd
 
@@ -565,7 +565,7 @@ kable(summary.sim)
 
 | Herd      | Period   | Lambda | 90% CrI   |
 | :-------- | :------- | -----: | :-------- |
-| Klinse-Za | Control  |   0.89 | 0.88-0.89 |
+| Klinse-Za | Control  |   0.89 | 0.88-0.9  |
 | Klinse-Za | Wolf     |   0.97 | 0.91-1.02 |
 | Klinse-Za | Wolf+Pen |   1.10 | 1.1-1.1   |
 
@@ -637,7 +637,7 @@ kable(summary.l)
 | Herd      | Period    | Years     | Lambda | 90% CrI   |
 | :-------- | :-------- | :-------- | -----: | :-------- |
 | Klinse-Za | post-mgmt | 2014-2020 |   1.07 | 1.05-1.09 |
-| Klinse-Za | pre-mgmt  | 1996-2012 |   0.89 | 0.88-0.89 |
+| Klinse-Za | pre-mgmt  | 1996-2012 |   0.89 | 0.88-0.9  |
 | Quintette | post-mgmt | 2016-2020 |   1.01 | 0.94-1.09 |
 | Quintette | pre-mgmt  | 2002-2015 |   0.94 | 0.91-0.97 |
 
@@ -668,9 +668,9 @@ kable(summary.effect)
 
 | pop       | period     | lambda difference |   lower | upper |
 | :-------- | :--------- | ----------------: | ------: | ----: |
-| Klinse-Za | wolf + pen |             0.182 |   0.160 | 0.205 |
+| Klinse-Za | wolf + pen |             0.179 |   0.157 | 0.201 |
 | Klinse-Za | pen        |             0.101 |   0.051 | 0.152 |
-| Klinse-Za | wolf       |             0.081 |   0.026 | 0.136 |
+| Klinse-Za | wolf       |             0.077 |   0.024 | 0.133 |
 | Quintette | wolf       |             0.074 | \-0.019 | 0.166 |
 
 \#\#Summarize vital rates
@@ -771,7 +771,7 @@ kable(summary.vr)
 | :-------- | :------------------- | :-------- | ----------: | :-------- | ----------: | :-------- | ---------------------: | :----------- |
 | Klinse-Za | post-mgmt (wolf)     | 2013-2020 |        0.85 | 0.8-0.9   |        0.12 | 0.1-0.13  |                   0.20 | 0.16-0.24    |
 | Klinse-Za | post-mgmt (wolf+pen) | 2014-2020 |        0.91 | 0.91-0.91 |        0.29 | 0.29-0.29 |                   0.30 | 0.3-0.3      |
-| Klinse-Za | pre-mgmt             | 1995-2012 |        0.79 | 0.77-0.81 |        0.12 | 0.1-0.13  |                   0.15 | 0.12-0.18    |
+| Klinse-Za | pre-mgmt             | 1995-2012 |        0.79 | 0.77-0.82 |        0.12 | 0.1-0.13  |                   0.15 | 0.12-0.18    |
 | Quintette | post-mgmt            | 2016-2020 |        0.90 | 0.86-0.93 |        0.18 | 0.15-0.21 |                   0.28 | 0.2-0.38     |
 | Quintette | pre-mgmt             | 2002-2015 |        0.84 | 0.81-0.86 |        0.13 | 0.12-0.14 |                   0.18 | 0.14-0.53    |
 
@@ -896,10 +896,10 @@ kable(summary.effect.refined)
 
 | pop       | period                     | lambda difference |   lower | upper |
 | :-------- | :------------------------- | ----------------: | ------: | ----: |
-| Klinse-Za | wolf + refined pen         |             0.175 |   0.150 | 0.200 |
-| Klinse-Za | refined wolf + refined pen |             0.158 |   0.128 | 0.188 |
-| Klinse-Za | refined pen                |             0.103 |   0.048 | 0.161 |
-| Klinse-Za | refined wolf               |             0.045 | \-0.032 | 0.115 |
+| Klinse-Za | wolf + refined pen         |             0.172 |   0.147 | 0.197 |
+| Klinse-Za | refined wolf + refined pen |             0.155 |   0.125 | 0.185 |
+| Klinse-Za | refined pen                |             0.103 |   0.048 | 0.160 |
+| Klinse-Za | refined wolf               |             0.042 | \-0.034 | 0.112 |
 | Quintette | Refined wolf               |             0.139 |   0.062 | 0.214 |
 
 \#\#Summarize refined period population growth
@@ -945,8 +945,8 @@ kable(summary.l.refined)
 | :-------- | :------------------------------------- | :-------- | -----: | :-------- |
 | Klinse-Za | post-mgmt (refined pen)                | 2016-2020 |   1.14 | 1.14-1.14 |
 | Klinse-Za | post-mgmt (refined wolf + refined pen) | 2017-2020 |   1.04 | 1.02-1.07 |
-| Klinse-Za | post-mgmt (refined wolf)               | 2017-2020 |   0.93 | 0.85-1    |
+| Klinse-Za | post-mgmt (refined wolf)               | 2017-2020 |   0.93 | 0.86-1    |
 | Klinse-Za | post-mgmt (wolf + refined pen)         | 2016-2020 |   1.06 | 1.04-1.09 |
-| Klinse-Za | pre-mgmt                               | 1996-2013 |   0.89 | 0.88-0.89 |
+| Klinse-Za | pre-mgmt                               | 1996-2013 |   0.89 | 0.88-0.9  |
 | Quintette | post-mgmt (refined wolf)               | 2017-2020 |   1.08 | 1.01-1.14 |
 | Quintette | pre-mgmt                               | 2002-2015 |   0.94 | 0.91-0.97 |
