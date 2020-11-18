@@ -670,7 +670,7 @@ kable(summary.effect)
 | :-------- | :--------- | ----------------: | ------: | ----: |
 | Klinse-Za | wolf + pen |             0.179 |   0.157 | 0.201 |
 | Klinse-Za | pen        |             0.101 |   0.051 | 0.152 |
-| Klinse-Za | wolf       |             0.077 |   0.024 | 0.133 |
+| Klinse-Za | wolf       |             0.077 |   0.023 | 0.134 |
 | Quintette | wolf       |             0.074 | \-0.019 | 0.166 |
 
 \#\#Summarize vital rates
@@ -899,7 +899,7 @@ kable(summary.effect.refined)
 | Klinse-Za | wolf + refined pen         |             0.172 |   0.147 | 0.197 |
 | Klinse-Za | refined wolf + refined pen |             0.155 |   0.125 | 0.185 |
 | Klinse-Za | refined pen                |             0.103 |   0.048 | 0.160 |
-| Klinse-Za | refined wolf               |             0.042 | \-0.034 | 0.112 |
+| Klinse-Za | refined wolf               |             0.042 | \-0.034 | 0.111 |
 | Quintette | Refined wolf               |             0.139 |   0.062 | 0.214 |
 
 \#\#Summarize refined period population growth
