@@ -11,9 +11,9 @@ rmarkdown::render(here::here('Plot_Together.Rmd'),
                   output_file = "README.md")
 ```
 
-#See folders KZ and QT for the IPM's for each herd
+# See folders KZ and QT for the IPM's for each herd
 
-##Load Data
+## Load Data
 ```{r Load packages and data, results='hide', message=FALSE, warning=FALSE}
 library(ggmcmc)
 library(jagsUI)
@@ -73,7 +73,7 @@ cri<-0.9
 ```
 
 
-##ABUNDANCE
+## ABUNDANCE
 ```{r Plot results-abundance, fig.height=8, fig.width=8, message=FALSE, warning=FALSE, results='hide'}
 
 abund_MF <- kz %>%
@@ -166,7 +166,7 @@ write_csv(kz %>%
 
 
 
-##ABUNDANCE FIT
+## ABUNDANCE FIT
 ```{r Plot results-abundance fit, results='hide', message=FALSE, warning=FALSE,fig.height=5, fig.width=9}
 fit_df <- abund_MF%>%
   mutate(type="modelled")%>%
@@ -237,7 +237,7 @@ ggsave(here::here("plots", "abundancefit_MF.png"), width=9, height=5)
 
 
 
-##VITAL RATES
+## VITAL RATES
 ```{r Plot results-vital rates,  message=FALSE, warning=FALSE, results='hide',fig.height=5, fig.width=9}
 #R
 
@@ -334,7 +334,7 @@ ggsave(here::here("plots", "vitalrate_F.png"), width=9, height=5)
 ```
 
 
-##COMPARE TO RAW VITAL RATE DATA
+## COMPARE TO RAW VITAL RATE DATA
 ```{r Plot results-vital rates vs raw data, results='hide', message=FALSE, warning=FALSE,fig.height=5, fig.width=9}
 kz_vr%>%mutate(pop=case_when(pop%in%"Free"~"KZ-Wolf",
                              pop%in%"Pen"~"KZ-Wolf + Pen"))%>%
@@ -358,7 +358,7 @@ ggsave(here::here("plots", "vitalratefit_F.png"), width=9, height=5)
 ```
 
 
-##WOLF EFFECT
+## WOLF EFFECT
 ```{r wolf, results='hide', message=FALSE, warning=FALSE,fig.height=5, fig.width=6}
 ##Refined Wolf Control== (2017-2020)
 
@@ -403,7 +403,7 @@ ggsave(here::here("plots", "wolf_effect.png"), width=6, height=5)
 
 
 
-##KZ EFFECT
+## KZ EFFECT
 ```{r kz effect, message=FALSE, warning=FALSE, results='hide',fig.height=5, fig.width=11}
 kz_effects <- ggs(kz$samples)%>%
   filter(Parameter%in%c("wolf_eff","pen_eff", "wolf_eff_iwolf","pen_eff_iwolf","pen_eff_ipen","wolf_eff_ipen"))
@@ -527,7 +527,7 @@ pop_age%>%
 
 ```
 
-##Summarize simultion population growth
+## Summarize simultion population growth
 ```{r Summarise sim growth rates}
 summary.sim <- 
   kz %>%

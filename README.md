@@ -3,9 +3,9 @@ KZ and QT IPM results
 Sara Williams, Hans Martin, and Clayton Lamb
 18 November, 2020
 
-\#See folders KZ and QT for the IPM’s for each herd
+# See folders KZ and QT for the IPM’s for each herd
 
-\#\#Load Data
+## Load Data
 
 ``` r
 library(ggmcmc)
@@ -65,7 +65,7 @@ kz_vr <- read_csv(here::here("data", "KZ", "vitalrate_validation_KZ.csv"))
 cri<-0.9
 ```
 
-\#\#ABUNDANCE
+## ABUNDANCE
 
 ``` r
 abund_MF <- kz %>%
@@ -157,7 +157,7 @@ write_csv(kz %>%
                      herd="Klinse-Za")%>%cbind(kz_yr_df), here::here("tables", "abundance_F.csv"))
 ```
 
-\#\#ABUNDANCE FIT
+## ABUNDANCE FIT
 
 ``` r
 fit_df <- abund_MF%>%
@@ -229,7 +229,7 @@ ggplot(data=fit_df%>%filter(type%in%"modelled"), aes(x = yrs, y = est, ymin=lowe
 ggsave(here::here("plots", "abundancefit_MF.png"), width=9, height=5)
 ```
 
-\#\#VITAL RATES
+## VITAL RATES
 
 ``` r
 #R
@@ -330,7 +330,7 @@ ggplot(mod_vr,
 ggsave(here::here("plots", "vitalrate_F.png"), width=9, height=5)
 ```
 
-\#\#COMPARE TO RAW VITAL RATE DATA
+## COMPARE TO RAW VITAL RATE DATA
 
 ``` r
 kz_vr%>%mutate(pop=case_when(pop%in%"Free"~"KZ-Wolf",
@@ -357,7 +357,7 @@ kz_vr%>%mutate(pop=case_when(pop%in%"Free"~"KZ-Wolf",
 ggsave(here::here("plots", "vitalratefit_F.png"), width=9, height=5)
 ```
 
-\#\#WOLF EFFECT
+## WOLF EFFECT
 
 ``` r
 ##Refined Wolf Control== (2017-2020)
@@ -403,7 +403,7 @@ ggplot(wolf_effects%>%filter(Parameter%in%"All Wolf Control"), aes(x = value,fil
 ggsave(here::here("plots", "wolf_effect.png"), width=6, height=5)
 ```
 
-\#\#KZ EFFECT
+## KZ EFFECT
 
 ``` r
 kz_effects <- ggs(kz$samples)%>%
@@ -537,7 +537,7 @@ pop_age%>%
 
 ![](README_files/figure-gfm/Age%20structure-2.png)<!-- -->
 
-\#\#Summarize simultion population growth
+## Summarize simultion population growth
 
 ``` r
 summary.sim <- 
