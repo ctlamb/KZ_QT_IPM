@@ -323,7 +323,7 @@ out_rnd_eff <- jagsUI::jags(ipm_dat,
 
 save(out_rnd_eff, file = here::here("KZ", "kz_out_rnd_eff.Rdata"))
 pb_upload(here::here("KZ", "kz_out_rnd_eff.Rdata"),
-          repo = "ctlamb/KZ_QT_IPM", 
+          repo = "ctlamb/KZ_QT_IPM",
           tag = "v0.0.1",
           overwrite=TRUE)
 unlink(here::here("KZ", "kz_out_rnd_eff.Rdata"))

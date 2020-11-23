@@ -1,7 +1,7 @@
 Herd,Period,Years,Lambda,90% CrI
-Klinse-Za,post-mgmt (refined pen),2016-2020,1.14,1.14-1.14
-Klinse-Za,post-mgmt (refined wolf + refined pen),2017-2020,1.04,1.02-1.07
-Klinse-Za,post-mgmt (refined wolf),2017-2020,0.93,0.86-1
+Klinse-Za,post-mgmt (refined pen),2016-2020,1.13,1.13-1.13
+Klinse-Za,post-mgmt (refined wolf + refined pen),2017-2020,1.05,1.02-1.07
+Klinse-Za,post-mgmt (refined wolf),2017-2020,0.94,0.86-1
 Klinse-Za,post-mgmt (wolf + refined pen),2016-2020,1.06,1.04-1.09
 Klinse-Za,pre-mgmt,1996-2013,0.89,0.88-0.9
 Quintette,post-mgmt (refined wolf),2017-2020,1.08,1.01-1.14

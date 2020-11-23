@@ -52,7 +52,6 @@ model{
 		S[23,2] <- 0.89
 		S[24,2] <- 0.86
 		S[25,2] <- 0.94
-		S[26,2] <- 1
 
 	##########################################################################
 	#  Process model - 3 ages, 2 pop
@@ -96,7 +95,7 @@ model{
 		
 		#  Population size of each age class in pop 2
 		N[yr,2,2] <- nPenSA[yr]
-		N[yr,3,2] <- nPen[yr]-(nPenSA[yr])
+		N[yr,3,2] <- nPen[yr]
 
 		#  Calves - Normal approximation of Poisson
 		##the total # of F minus the F that were in the pen the previous year and survived (i.e., to get at the # that were available outside to calve)

@@ -336,15 +336,15 @@ ggsave(here::here("plots", "vitalrate_F.png"), width=9, height=5)
 
 ## COMPARE TO RAW VITAL RATE DATA
 ```{r Plot results-vital rates vs raw data, results='hide', message=FALSE, warning=FALSE,fig.height=5, fig.width=9}
-kz_vr%>%mutate(pop=case_when(pop%in%"Free"~"KZ-Wolf",
+validate_vr <- kz_vr%>%mutate(pop=case_when(pop%in%"Free"~"KZ-Wolf",
                              pop%in%"Pen"~"KZ-Wolf + Pen"))%>%
   rbind(qt_vr%>%mutate(pop=case_when(pop%in%"Free"~"QT-Wolf")))%>%
   mutate(type="Observed")%>%
   rename(est=estimate)%>%
   select(colnames(mod_vr))%>%
-  rbind(mod_vr)%>%
+  rbind(mod_vr)
 
-  ggplot(aes(x = yrs, y = est, fill=type, ymin=lower, ymax=upper)) +
+  ggplot(validate_vr,aes(x = yrs, y = est, fill=type, ymin=lower, ymax=upper)) +
   geom_line(aes(color=type)) +
   geom_ribbon(alpha=0.4)+
   theme_ipsum()+
@@ -354,6 +354,8 @@ kz_vr%>%mutate(pop=case_when(pop%in%"Free"~"KZ-Wolf",
     facet_wrap(vars(param, pop), scales="free_y")
 
 ggsave(here::here("plots", "vitalratefit_F.png"), width=9, height=5)
+
+validate_vr%>%filter(param=="Recruitment", pop=="KZ-Wolf + Pen", yrs%in% c(2016:2020))
             
 ```
 
