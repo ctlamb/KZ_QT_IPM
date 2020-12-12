@@ -158,15 +158,15 @@ model{
 	diff_geom_mean_lambda_post_to_pre_iwolf <- geom_mean_lambda_post_iwolf - geom_mean_lambda_pre
 
 	#  Summarize Vital Rates
-	mean_surv_pre <- prod(S[1:15])^(1/length(S[1:15]))
-	mean_surv_post <- prod(S[16:19])^(1/length(S[16:19]))
+	mean_surv_pre <- prod(S[1:14])^(1/length(S[1:14]))
+	mean_surv_post <- prod(S[15:19])^(1/length(S[15:19]))
 
 	##have to use mean here as opposed to geo mean due to derived parameter that goes slightly negative at times at lower CI and causes issues.
-	 mean_r_pre <- mean(R[2:16])
-	 mean_r_post <- mean(R[17:20])
+	 mean_r_pre <- mean(R[2:15])
+	 mean_r_post <- mean(R[16:20])
 
-	 mean_r3_pre <- mean(R.ad[2:16])
-	 mean_r3_post <- mean(R.ad[17:20])
+	 mean_r3_pre <- mean(R.ad[2:15])
+	 mean_r3_post <- mean(R.ad[16:20])
 
 
 

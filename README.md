@@ -640,7 +640,7 @@ kable(summary.l)
 | :-------- | :-------- | :-------- | -----: | :-------- |
 | Klinse-Za | post-mgmt | 2014-2020 |   1.07 | 1.05-1.09 |
 | Klinse-Za | pre-mgmt  | 1996-2012 |   0.89 | 0.88-0.9  |
-| Quintette | post-mgmt | 2016-2020 |   1.01 | 0.94-1.09 |
+| Quintette | post-mgmt | 2016-2020 |   1.01 | 0.94-1.08 |
 | Quintette | pre-mgmt  | 2002-2015 |   0.94 | 0.91-0.97 |
 
 \#\#Summarize effect of treatments
@@ -673,7 +673,7 @@ kable(summary.effect)
 | Klinse-Za | wolf + pen |             0.179 |   0.157 | 0.202 |
 | Klinse-Za | pen        |             0.100 |   0.048 | 0.151 |
 | Klinse-Za | wolf       |             0.079 |   0.025 | 0.136 |
-| Quintette | wolf       |             0.074 | \-0.019 | 0.166 |
+| Quintette | wolf       |             0.073 | \-0.020 | 0.164 |
 
 \#\#Summarize vital rates
 
@@ -778,8 +778,8 @@ kable(summary.vr)
 | Klinse-Za | post-mgmt (wolf)     | 2013-2020 |        0.85 | 0.8-0.9   |        0.12 | 0.1-0.13  |                   0.20 | 0.16-0.25    |
 | Klinse-Za | post-mgmt (wolf+pen) | 2014-2020 |        0.91 | 0.91-0.91 |        0.28 | 0.28-0.28 |                   0.29 | 0.29-0.29    |
 | Klinse-Za | pre-mgmt             | 1995-2012 |        0.79 | 0.77-0.82 |        0.12 | 0.1-0.13  |                   0.15 | 0.12-0.18    |
-| Quintette | post-mgmt            | 2016-2020 |        0.90 | 0.86-0.93 |        0.18 | 0.15-0.21 |                   0.28 | 0.2-0.38     |
-| Quintette | pre-mgmt             | 2002-2015 |        0.84 | 0.81-0.86 |        0.13 | 0.12-0.14 |                   0.18 | 0.14-0.53    |
+| Quintette | post-mgmt            | 2016-2020 |        0.86 | 0.81-0.9  |        0.18 | 0.15-0.21 |                   0.27 | 0.2-0.35     |
+| Quintette | pre-mgmt             | 2002-2015 |        0.85 | 0.82-0.87 |        0.12 | 0.11-0.14 |                   0.18 | 0.14-0.51    |
 
 ## What proportion of non-calf females penned/yr
 
@@ -935,7 +935,7 @@ kable(summary.effect.refined)
 | Klinse-Za | refined wolf + refined pen |             0.155 |   0.125 | 0.185 |
 | Klinse-Za | refined pen                |             0.100 |   0.044 | 0.159 |
 | Klinse-Za | refined wolf               |             0.046 | \-0.032 | 0.116 |
-| Quintette | Refined wolf               |             0.139 |   0.062 | 0.214 |
+| Quintette | Refined wolf               |             0.138 |   0.062 | 0.214 |
 
 \#\#Summarize refined period population growth
 
