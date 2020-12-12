@@ -106,7 +106,7 @@ model{
 	#  Abundance model
 	for(i in 1:na){
 		abundat[i,5] ~ dnorm(totAdultsMF[abundat[i,2]], abundat[i,6])T(0,)
-		#totAdultsMF[yr]: total number of males and females age class 2 and 3
+		#totAdultsMF[yr]: total number of males and females age class 2 and 3+
 		}
 	
 	#  Minimum count model	

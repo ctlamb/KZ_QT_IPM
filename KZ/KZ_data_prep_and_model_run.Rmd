@@ -288,7 +288,8 @@ model_parms <- c("lambda","lambdaC",
 	"wolf_eff_proportion","pen_eff_proportion",
 	"lambdaSimC", "lambdaSimC2","lambdaSimP",
 	"wolf_eff","pen_eff", "wolf_eff_iwolf","pen_eff_iwolf","pen_eff_ipen", "wolf_eff_ipen",
-	"diff_geom_mean_lambda_post_to_pre_ipen", "geom_mean_lambda_postpen_iPen", "geom_mean_lambda_SimPen_iPen")
+	"diff_geom_mean_lambda_post_to_pre_ipen", "geom_mean_lambda_postpen_iPen", "geom_mean_lambda_SimPen_iPen",
+	"mean_surv_post_pooled","mean_r_post_pooled","mean_r3_post_pooled","penprop")
 
 
 #  Run model with survival and recruitment varying per year
@@ -764,19 +765,22 @@ summary.s <- tribble(
   ~pop,~s, ~s.lower, ~s.upper,
 "pre-mgmt",out_rnd_eff$mean$mean_surv_pre, out_rnd_eff$q2.5$mean_surv_pre,out_rnd_eff$q97.5$geom_mean_lambda_pre,
 "pen", out_rnd_eff$mean$mean_surv_pen, out_rnd_eff$q2.5$mean_surv_pen, out_rnd_eff$q97.5$mean_surv_pen,
-"wolf", out_rnd_eff$mean$mean_surv_wolf, out_rnd_eff$q2.5$mean_surv_wolf, out_rnd_eff$q97.5$mean_surv_wolf)
+"wolf", out_rnd_eff$mean$mean_surv_wolf, out_rnd_eff$q2.5$mean_surv_wolf, out_rnd_eff$q97.5$mean_surv_wolf,
+"post-pooled", out_rnd_eff$mean$mean_surv_post_pooled, out_rnd_eff$q2.5$mean_surv_post_pooled, out_rnd_eff$q97.5$mean_surv_post_pooled)
 
 summary.r <- tribble(
   ~pop,~r, ~r.lower, ~r.upper,
 "pre-mgmt",out_rnd_eff$mean$mean_r_pre, out_rnd_eff$q2.5$mean_r_pre, out_rnd_eff$q97.5$mean_r_pre,
 "pen", out_rnd_eff$mean$mean_r_pen, out_rnd_eff$q2.5$mean_r_pen, out_rnd_eff$q97.5$mean_r_pen,
-"wolf", out_rnd_eff$mean$mean_r_wolf, out_rnd_eff$q2.5$mean_r_wolf, out_rnd_eff$q97.5$mean_r_wolf)
+"wolf", out_rnd_eff$mean$mean_r_wolf, out_rnd_eff$q2.5$mean_r_wolf, out_rnd_eff$q97.5$mean_r_wolf,
+"post-pooled", out_rnd_eff$mean$mean_r_post_pooled, out_rnd_eff$q2.5$mean_r_post_pooled, out_rnd_eff$q97.5$mean_r_post_pooled)
 
 summary.r3 <- tribble(
   ~pop,~r.ad, ~r.ad.lower, ~r.ad.upper,
 "pre-mgmt", out_rnd_eff$mean$mean_r3_pre, out_rnd_eff$q2.5$mean_r3_pre, out_rnd_eff$q97.5$mean_r3_pre,
 "pen", out_rnd_eff$mean$mean_r3_pen, out_rnd_eff$q2.5$mean_r3_pen, out_rnd_eff$q97.5$mean_r3_pen,
-"wolf", out_rnd_eff$mean$mean_r3_wolf, out_rnd_eff$q2.5$mean_r3_wolf, out_rnd_eff$q97.5$mean_r3_wolf)
+"wolf", out_rnd_eff$mean$mean_r3_wolf, out_rnd_eff$q2.5$mean_r3_wolf, out_rnd_eff$q97.5$mean_r3_wolf,
+"post-pooled", out_rnd_eff$mean$mean_r3_post_pooled, out_rnd_eff$q2.5$mean_r3_post_pooled, out_rnd_eff$q97.5$mean_r3_post_pooled)
 
 
 summary.vr <- summary.s%>%
@@ -785,7 +789,7 @@ summary.vr <- summary.s%>%
   mutate_if(is.numeric,function(x) round(x,2))
 
 
-summary.vr$Years <- c("1996-2013", "2015-2020", "2014-2020")
+summary.vr$Years <- c("1996-2013", "2014-2020", "2013-2020", "2014-2020")
 
 summary.vr <- summary.vr%>%
   mutate(`s 95% CI`=paste(s.lower,s.upper, sep="-"),

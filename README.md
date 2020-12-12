@@ -1,7 +1,7 @@
 KZ and QT IPM results
 ================
 Sara Williams, Hans Martin, and Clayton Lamb
-23 November, 2020
+12 December, 2020
 
 # See folders KZ and QT for the IPM’s for each herd
 
@@ -539,7 +539,7 @@ pop_age%>%
 
 ![](README_files/figure-gfm/Age%20structure-2.png)<!-- -->
 
-## Summarize simultion population growth
+## Summarize simulation population growth
 
 ``` r
 summary.sim <- 
@@ -671,8 +671,8 @@ kable(summary.effect)
 | pop       | period     | lambda difference |   lower | upper |
 | :-------- | :--------- | ----------------: | ------: | ----: |
 | Klinse-Za | wolf + pen |             0.179 |   0.157 | 0.202 |
-| Klinse-Za | pen        |             0.101 |   0.049 | 0.151 |
-| Klinse-Za | wolf       |             0.078 |   0.024 | 0.135 |
+| Klinse-Za | pen        |             0.100 |   0.048 | 0.151 |
+| Klinse-Za | wolf       |             0.079 |   0.025 | 0.136 |
 | Quintette | wolf       |             0.074 | \-0.019 | 0.166 |
 
 \#\#Summarize vital rates
@@ -680,12 +680,13 @@ kable(summary.effect)
 ``` r
 summary.s <- 
   kz %>%
-  gather_draws(mean_surv_pre,mean_surv_pen,mean_surv_wolf)%>%
+  gather_draws(mean_surv_pre,mean_surv_pen,mean_surv_wolf,mean_surv_post_pooled)%>%
   median_qi(.width = cri)%>%
   mutate(pop="Klinse-Za",
          period=case_when(`.variable`%in% "mean_surv_pre" ~"pre-mgmt",
                           `.variable`%in% "mean_surv_pen" ~"post-mgmt (wolf+pen)",
-                          `.variable`%in% "mean_surv_wolf" ~"post-mgmt (wolf)"))%>%
+                          `.variable`%in% "mean_surv_wolf" ~"post-mgmt (wolf)",
+                          `.variable`%in% "mean_surv_post_pooled" ~"post-mgmt (pooled)"))%>%
 rbind(
   qt %>%
   gather_draws(mean_surv_pre,mean_surv_post)%>%
@@ -701,12 +702,13 @@ rbind(
 
 summary.r <- 
     kz %>%
-  gather_draws(mean_r_pre,mean_r_pen,mean_r_wolf)%>%
+  gather_draws(mean_r_pre,mean_r_pen,mean_r_wolf,mean_r_post_pooled)%>%
   median_qi(.width = cri)%>%
   mutate(pop="Klinse-Za",
          period=case_when(`.variable`%in% "mean_r_pre" ~"pre-mgmt",
                           `.variable`%in% "mean_r_pen" ~"post-mgmt (wolf+pen)",
-                          `.variable`%in% "mean_r_wolf" ~"post-mgmt (wolf)"))%>%
+                          `.variable`%in% "mean_r_wolf" ~"post-mgmt (wolf)",
+                          `.variable`%in% "mean_r_post_pooled" ~"post-mgmt (pooled)"))%>%
 rbind(
   qt %>%
   gather_draws(mean_r_pre,mean_r_post)%>%
@@ -722,12 +724,13 @@ rbind(
 
 summary.r3 <- 
       kz %>%
-  gather_draws(mean_r3_pre,mean_r3_pen,mean_r3_wolf)%>%
+  gather_draws(mean_r3_pre,mean_r3_pen,mean_r3_wolf,mean_r3_post_pooled)%>%
   median_qi(.width = cri)%>%
   mutate(pop="Klinse-Za",
          period=case_when(`.variable`%in% "mean_r3_pre" ~"pre-mgmt",
                           `.variable`%in% "mean_r3_pen" ~"post-mgmt (wolf+pen)",
-                          `.variable`%in% "mean_r3_wolf" ~"post-mgmt (wolf)"))%>%
+                          `.variable`%in% "mean_r3_wolf" ~"post-mgmt (wolf)",
+                          `.variable`%in% "mean_r3_post_pooled" ~"post-mgmt (pooled)"))%>%
 rbind(
   qt %>%
   gather_draws(mean_r3_pre,mean_r3_post)%>%
@@ -752,7 +755,7 @@ summary.vr <- summary.s%>%
     ## Joining, by = c("pop", "period")
 
 ``` r
-summary.vr$Years <- c("2013-2020","2014-2020","1995-2012" , "2016-2020","2002-2015")
+summary.vr$Years <- c("2014-2020","2013-2020","2014-2020","1995-2012" , "2016-2020","2002-2015")
 
 summary.vr <- summary.vr%>%
   mutate(`s CrI`=paste(s.lower,s.upper, sep="-"),
@@ -771,13 +774,43 @@ kable(summary.vr)
 
 | Group     | Period               | Years     | AF Survival | 90% CrI   | Recruitment | r90% CrI  | Recruitment-Adult Only | r.ad.90% CrI |
 | :-------- | :------------------- | :-------- | ----------: | :-------- | ----------: | :-------- | ---------------------: | :----------- |
-| Klinse-Za | post-mgmt (wolf)     | 2013-2020 |        0.84 | 0.8-0.9   |        0.12 | 0.1-0.13  |                   0.20 | 0.16-0.25    |
+| Klinse-Za | post-mgmt (pooled)   | 2014-2020 |        0.87 | 0.85-0.9  |        0.19 | 0.19-0.2  |                   0.25 | 0.22-0.27    |
+| Klinse-Za | post-mgmt (wolf)     | 2013-2020 |        0.85 | 0.8-0.9   |        0.12 | 0.1-0.13  |                   0.20 | 0.16-0.25    |
 | Klinse-Za | post-mgmt (wolf+pen) | 2014-2020 |        0.91 | 0.91-0.91 |        0.28 | 0.28-0.28 |                   0.29 | 0.29-0.29    |
-| Klinse-Za | pre-mgmt             | 1995-2012 |        0.80 | 0.77-0.82 |        0.12 | 0.1-0.13  |                   0.15 | 0.12-0.18    |
+| Klinse-Za | pre-mgmt             | 1995-2012 |        0.79 | 0.77-0.82 |        0.12 | 0.1-0.13  |                   0.15 | 0.12-0.18    |
 | Quintette | post-mgmt            | 2016-2020 |        0.90 | 0.86-0.93 |        0.18 | 0.15-0.21 |                   0.28 | 0.2-0.38     |
 | Quintette | pre-mgmt             | 2002-2015 |        0.84 | 0.81-0.86 |        0.13 | 0.12-0.14 |                   0.18 | 0.14-0.53    |
 
-\#\#Summarise over periods of improved treatment deliver
+## What proportion of non-calf females penned/yr
+
+``` r
+penned.prop <- kz %>%
+  gather_draws(penprop[i])%>%
+  median_qi(.width = cri)%>%
+  cbind(kz_yr_df)%>%
+  filter(yrs>=2014)
+
+ggplot(penned.prop,aes(x = yrs, y = .value, ymin=.lower, ymax=.upper)) +
+  geom_ribbon(alpha=0.4)+
+  geom_line() +
+  geom_point() +
+  theme_ipsum()+
+  theme(legend.position = "none")+
+  ylab("Proportion")+
+  xlab("Year")+
+  labs(x="Year",title="Proportion of females (>1 yo) penned/yr")+
+    expand_limits(y=0)+
+  theme(axis.title.x = element_text(size=15),
+        axis.title.y = element_text(size=15),
+        strip.text.x = element_text(size=15),
+        strip.text.y = element_text(size=15),
+        legend.text = element_text(size=13),
+        legend.title=element_text(size=15))
+```
+
+![](README_files/figure-gfm/pen%20prop-1.png)<!-- -->
+
+\#Summarise over periods of improved treatment deliver
 
 ``` r
 ##KZ Effect INDIVIDUAL
@@ -898,10 +931,10 @@ kable(summary.effect.refined)
 
 | pop       | period                     | lambda difference |   lower | upper |
 | :-------- | :------------------------- | ----------------: | ------: | ----: |
-| Klinse-Za | wolf + refined pen         |             0.172 |   0.147 | 0.197 |
-| Klinse-Za | refined wolf + refined pen |             0.156 |   0.126 | 0.185 |
-| Klinse-Za | refined pen                |             0.101 |   0.046 | 0.159 |
-| Klinse-Za | refined wolf               |             0.045 | \-0.031 | 0.115 |
+| Klinse-Za | wolf + refined pen         |             0.172 |   0.147 | 0.198 |
+| Klinse-Za | refined wolf + refined pen |             0.155 |   0.125 | 0.185 |
+| Klinse-Za | refined pen                |             0.100 |   0.044 | 0.159 |
+| Klinse-Za | refined wolf               |             0.046 | \-0.032 | 0.116 |
 | Quintette | Refined wolf               |             0.139 |   0.062 | 0.214 |
 
 \#\#Summarize refined period population growth
@@ -947,7 +980,7 @@ kable(summary.l.refined)
 | :-------- | :------------------------------------- | :-------- | -----: | :-------- |
 | Klinse-Za | post-mgmt (refined pen)                | 2016-2020 |   1.13 | 1.13-1.13 |
 | Klinse-Za | post-mgmt (refined wolf + refined pen) | 2017-2020 |   1.05 | 1.02-1.07 |
-| Klinse-Za | post-mgmt (refined wolf)               | 2017-2020 |   0.94 | 0.86-1    |
+| Klinse-Za | post-mgmt (refined wolf)               | 2017-2020 |   0.94 | 0.86-1.01 |
 | Klinse-Za | post-mgmt (wolf + refined pen)         | 2016-2020 |   1.06 | 1.04-1.09 |
 | Klinse-Za | pre-mgmt                               | 1996-2013 |   0.89 | 0.88-0.9  |
 | Quintette | post-mgmt (refined wolf)               | 2017-2020 |   1.08 | 1.01-1.14 |

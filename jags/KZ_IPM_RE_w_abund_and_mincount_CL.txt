@@ -89,6 +89,7 @@ model{
 	totAdultsCMF[1] <- totAdultsC[1]/adult_sex_ratio[1]
 	totCalvesMF[1] <- totCalves[1]/0.5
 	totNMF[1] <- totAdultsMF[1] + totCalvesMF[1] 
+	penprop[1]<-0
 	
 	
 	for(yr in 2:nyr){
@@ -140,6 +141,7 @@ model{
 		totAdultsCMF[yr] <- totAdultsC[yr]/adult_sex_ratio[yr]
 		totCalvesMF[yr] <- totCalves[yr]/0.5
 		totNMF[yr] <- totAdultsMF[yr] + totCalvesMF[yr]
+		penprop[yr] <-   	totAdultsP[yr]/totAdults[yr]
 	}
 
 	##########################################################################
@@ -249,9 +251,11 @@ for(yr in 2:nyr){
 	 mean_r3_pre <- mean(R.ad[2:19,1])
 	 mean_r3_pen <- mean(R.sim[21:26,2])
 	 mean_r3_wolf <- mean(R.ad[20:26,1])
-
-  
-
+	 
+	  #  Weighted average pooled vital rates
+    mean_surv_post_pooled <- mean((S[20:25,2]*penprop[21:26])+(S[20:25,1]*(1-penprop[21:26])))
+    mean_r_post_pooled <- mean((R[21:26,2]*penprop[21:26])+(R[21:26,1]*(1-penprop[21:26])))
+    mean_r3_post_pooled <- mean((R.sim[21:26,2]*penprop[21:26])+(R.ad[21:26,1]*(1-penprop[21:26])))
 	
 	# ##pen vs wolf control effects
 	 wolf_eff_proportion <- wolf_eff/diff_geom_mean_lambda_post_to_pre

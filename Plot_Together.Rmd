@@ -529,7 +529,7 @@ pop_age%>%
 
 ```
 
-## Summarize simultion population growth
+## Summarize simulation population growth
 ```{r Summarise sim growth rates}
 summary.sim <- 
   kz %>%
@@ -651,12 +651,13 @@ kable(summary.effect)
 
 summary.s <- 
   kz %>%
-  gather_draws(mean_surv_pre,mean_surv_pen,mean_surv_wolf)%>%
+  gather_draws(mean_surv_pre,mean_surv_pen,mean_surv_wolf,mean_surv_post_pooled)%>%
   median_qi(.width = cri)%>%
   mutate(pop="Klinse-Za",
          period=case_when(`.variable`%in% "mean_surv_pre" ~"pre-mgmt",
                           `.variable`%in% "mean_surv_pen" ~"post-mgmt (wolf+pen)",
-                          `.variable`%in% "mean_surv_wolf" ~"post-mgmt (wolf)"))%>%
+                          `.variable`%in% "mean_surv_wolf" ~"post-mgmt (wolf)",
+                          `.variable`%in% "mean_surv_post_pooled" ~"post-mgmt (pooled)"))%>%
 rbind(
   qt %>%
   gather_draws(mean_surv_pre,mean_surv_post)%>%
@@ -672,12 +673,13 @@ rbind(
 
 summary.r <- 
     kz %>%
-  gather_draws(mean_r_pre,mean_r_pen,mean_r_wolf)%>%
+  gather_draws(mean_r_pre,mean_r_pen,mean_r_wolf,mean_r_post_pooled)%>%
   median_qi(.width = cri)%>%
   mutate(pop="Klinse-Za",
          period=case_when(`.variable`%in% "mean_r_pre" ~"pre-mgmt",
                           `.variable`%in% "mean_r_pen" ~"post-mgmt (wolf+pen)",
-                          `.variable`%in% "mean_r_wolf" ~"post-mgmt (wolf)"))%>%
+                          `.variable`%in% "mean_r_wolf" ~"post-mgmt (wolf)",
+                          `.variable`%in% "mean_r_post_pooled" ~"post-mgmt (pooled)"))%>%
 rbind(
   qt %>%
   gather_draws(mean_r_pre,mean_r_post)%>%
@@ -693,12 +695,13 @@ rbind(
 
 summary.r3 <- 
       kz %>%
-  gather_draws(mean_r3_pre,mean_r3_pen,mean_r3_wolf)%>%
+  gather_draws(mean_r3_pre,mean_r3_pen,mean_r3_wolf,mean_r3_post_pooled)%>%
   median_qi(.width = cri)%>%
   mutate(pop="Klinse-Za",
          period=case_when(`.variable`%in% "mean_r3_pre" ~"pre-mgmt",
                           `.variable`%in% "mean_r3_pen" ~"post-mgmt (wolf+pen)",
-                          `.variable`%in% "mean_r3_wolf" ~"post-mgmt (wolf)"))%>%
+                          `.variable`%in% "mean_r3_wolf" ~"post-mgmt (wolf)",
+                          `.variable`%in% "mean_r3_post_pooled" ~"post-mgmt (pooled)"))%>%
 rbind(
   qt %>%
   gather_draws(mean_r3_pre,mean_r3_post)%>%
@@ -719,7 +722,7 @@ summary.vr <- summary.s%>%
   mutate_if(is.numeric,function(x) round(x,2))
 
 
-summary.vr$Years <- c("2013-2020","2014-2020","1995-2012" , "2016-2020","2002-2015")
+summary.vr$Years <- c("2014-2020","2013-2020","2014-2020","1995-2012" , "2016-2020","2002-2015")
 
 summary.vr <- summary.vr%>%
   mutate(`s CrI`=paste(s.lower,s.upper, sep="-"),
@@ -735,10 +738,33 @@ colnames(summary.vr) <- c("Group", "Period", "Years", "AF Survival","90% CrI", "
 write_csv(summary.vr,here::here("tables", "vital_rates.csv"))
 kable(summary.vr)
 ```
+## What proportion of non-calf females penned/yr
+```{r pen prop,  message=FALSE, warning=FALSE, fig.height=5, fig.width=11}
+penned.prop <- kz %>%
+  gather_draws(penprop[i])%>%
+  median_qi(.width = cri)%>%
+  cbind(kz_yr_df)%>%
+  filter(yrs>=2014)
 
+ggplot(penned.prop,aes(x = yrs, y = .value, ymin=.lower, ymax=.upper)) +
+  geom_ribbon(alpha=0.4)+
+  geom_line() +
+  geom_point() +
+  theme_ipsum()+
+  theme(legend.position = "none")+
+  ylab("Proportion")+
+  xlab("Year")+
+  labs(x="Year",title="Proportion of females (>1 yo) penned/yr")+
+    expand_limits(y=0)+
+  theme(axis.title.x = element_text(size=15),
+        axis.title.y = element_text(size=15),
+        strip.text.x = element_text(size=15),
+        strip.text.y = element_text(size=15),
+        legend.text = element_text(size=13),
+        legend.title=element_text(size=15))
+```
 
-
-##Summarise over periods of improved treatment deliver
+#Summarise over periods of improved treatment deliver
 ```{r summarise over improved,  message=FALSE, warning=FALSE, fig.height=5, fig.width=11}
 ##KZ Effect INDIVIDUAL
 kz_effects%>%
