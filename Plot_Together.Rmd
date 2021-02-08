@@ -589,7 +589,7 @@ kable(summary.sim)
 
 
 
-##Wolf vs Pen effect
+## Wolf vs Pen effect
 ```{r Wolf vs Pen effect, results='hide', message=FALSE, warning=FALSE,fig.height=5, fig.width=7}
 S <- ggs(kz$samples)%>%
   filter(Parameter%in%c("wolf_eff_proportion","pen_eff_proportion"))
@@ -616,7 +616,7 @@ kz$mean$pen_eff_proportion
 
 
   
-##Summarize population growth
+## Summarize population growth
 ```{r Summarise growth rates}
 
 summary.l <- 
@@ -652,7 +652,7 @@ kable(summary.l)
 ```
 
 
-##Summarize effect of treatments
+## Summarize effect of treatments
 ```{r effects}
 summary.effect <- 
 kz %>%
@@ -677,7 +677,7 @@ kable(summary.effect)
 ```
 
 
-##Summarize vital rates
+## Summarize vital rates
 ```{r Plot results-summarise vital rates, results='asis'}
 
 summary.s <- 
@@ -804,7 +804,7 @@ penned.prop%>%
             upper=mean(.upper))
 ```
 
-#Summarise over periods of improved treatment deliver
+## Summarise over periods of improved treatment deliver
 ```{r summarise over improved,  message=FALSE, warning=FALSE, fig.height=5, fig.width=11}
 ##KZ Effect INDIVIDUAL
 kz_effects%>%
@@ -864,7 +864,7 @@ ggplot(aes(x = value,fill=Treatment)) +
 ggsave(here::here("plots", "refined_KZ_effects.png"), width=11, height=5)
 ```
 
-##Refined Wolf reduction
+## Refined Wolf reduction
 ```{r Refined Wolf Control,  message=FALSE, warning=FALSE, fig.height=5, fig.width=7}
   ggplot(wolf_effects%>%filter(Parameter%in%"Refined Wolf Control"), aes(x = value,fill=Parameter)) +
   geom_density(alpha=0.5) +
@@ -884,7 +884,7 @@ ggsave(here::here("plots", "refined_wolf_effect.png"), width=7, height=5)
 ```
 
 
-##Summarize effect of refined treatments
+## Summarize effect of refined treatments
 ```{r refined effects, results='asis'}
 
 summary.effect.refined <- 
@@ -911,7 +911,7 @@ kable(summary.effect.refined)
 ```
 
   
-##Summarize refined period population growth
+## Summarize refined period population growth
 ```{r Summarise refined growth rates, results='asis'}
 
 summary.l.refined <- 
@@ -951,7 +951,7 @@ kable(summary.l.refined)
 ```
 
 
-
+## Sample Size Summaries
 ```{r Summarise sample sizes, eval=FALSE, include=FALSE, results='asis'}
 kz.raw <- read_excel("/Users/clayton.lamb/Dropbox/Caribou/JWM_Klinse-za demographics/Analysis/Klinse-zaEackerInputs_200607_CL.xlsx",
                       sheet="SurvivalKlinse-zaSPenFre")%>%
@@ -985,16 +985,14 @@ qt.raw%>%select(id,Year,dur)%>%rbind(kz.raw%>%select(id,Year,dur))%>%
 
 
 
-##M+F growth rates
+## Male + Female Population Growth Rates
 ```{r MF growth, results='asis'}
-tribble(
+kable(
+  tribble(
   ~Growth, ~Years, ~Lambda, 
 "Klinse-Za", "2014-2020", gm_mean(kz$mean$totNMF[20:26]/kz$mean$totNMF[19:25]),
 "Quintette", "2016-2020", gm_mean(qt$mean$totNMF[16:20]/qt$mean$totNMF[15:19]),
 "Quintette", "2017-2020", gm_mean(qt$mean$totNMF[17:20]/qt$mean$totNMF[16:19]))%>%
-  mutate(Lambda=round(Lambda,2))%>%
-gt()%>%
-  tab_header(
-    title = md("Male + Female Population Growth Rates")
-  ) 
+  mutate(Lambda=round(Lambda,2))
+)
 ```
