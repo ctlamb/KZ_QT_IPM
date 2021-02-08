@@ -527,6 +527,37 @@ pop_age%>%
         legend.text = element_text(size=13),
         legend.title=element_blank())
 
+pop_age%>%
+  group_by(pop,year,herd)%>%
+  mutate(sum=sum(value),
+         value2=value/sum)%>%
+  filter(herd=="Klinse-Za")%>%
+  mutate(Ageclass=name,
+         group=case_when(pop=="Free" & year%in%c(1996:2013)~"pre-mgmt",
+                         pop=="Free" & year>=2014~"wolf",
+                         pop=="Pen" & year>=2014~"Pen"
+         ))%>%
+           drop_na(group)%>%
+           group_by(group, Ageclass)%>%
+          summarise(mean=mean(value2),
+             lower=quantile(value2, 0.05),
+             upper=quantile(value2, 0.95))
+
+
+  pop_age%>%
+    filter(year>=2014 & herd=="Klinse-Za")%>%
+    group_by(year,name)%>%
+      summarise(value=sum(value))%>%
+    ungroup%>%
+  group_by(year)%>%
+  mutate(sum=sum(value),
+         value2=value/sum)%>%
+  mutate(Ageclass=name)%>%
+           group_by(Ageclass)%>%
+          summarise(mean=mean(value2),
+             lower=quantile(value2, 0.05),
+             upper=quantile(value2, 0.95))
+
 ```
 
 ## Summarize simulation population growth
@@ -737,6 +768,9 @@ colnames(summary.vr) <- c("Group", "Period", "Years", "AF Survival","90% CrI", "
 
 write_csv(summary.vr,here::here("tables", "vital_rates.csv"))
 kable(summary.vr)
+
+# summary.vr%>%
+#   mutate(hb=`AF Survival`/ (1-(Recruitment/(Recruitment+1))))
 ```
 ## What proportion of non-calf females penned/yr
 ```{r pen prop,  message=FALSE, warning=FALSE, fig.height=5, fig.width=11}
@@ -762,6 +796,12 @@ ggplot(penned.prop,aes(x = yrs, y = .value, ymin=.lower, ymax=.upper)) +
         strip.text.y = element_text(size=15),
         legend.text = element_text(size=13),
         legend.title=element_text(size=15))
+
+penned.prop%>%
+  ungroup()%>%
+  summarise(mean=mean(.value),
+            lower=mean(.lower),
+            upper=mean(.upper))
 ```
 
 #Summarise over periods of improved treatment deliver
@@ -908,4 +948,53 @@ summary.l.refined <- summary.l.refined%>%
 
 write_csv(summary.l.refined,here::here("tables", "refined_lambda.csv"))
 kable(summary.l.refined)
+```
+
+
+
+```{r Summarise sample sizes, eval=FALSE, include=FALSE, results='asis'}
+kz.raw <- read_excel("/Users/clayton.lamb/Dropbox/Caribou/JWM_Klinse-za demographics/Analysis/Klinse-zaEackerInputs_200607_CL.xlsx",
+                      sheet="SurvivalKlinse-zaSPenFre")%>%
+  mutate(dur=exit-enter)
+
+qt.raw <- read_excel("/Users/clayton.lamb/Dropbox/Caribou/JWM_Klinse-za demographics/Analysis/QuintetteEackerInputs_200710_CL.xlsx",
+                      sheet="QuintetteSPooled")%>%
+  mutate(dur=exit-enter)
+
+
+kz.raw%>%
+  filter(Year<=2013)%>%
+  summarise(an.yrs=sum(dur)/12,
+            animals=n_distinct(id))
+
+kz.raw%>%
+  filter(Year>2013)%>%
+  summarise(an.yrs=sum(dur)/12,
+            animals=n_distinct(id))
+
+qt.raw%>%
+  summarise(an.yrs=sum(dur)/12,
+            animals=n_distinct(id))
+
+qt.raw%>%select(id,Year,dur)%>%rbind(kz.raw%>%select(id,Year,dur))%>%
+    summarise(an.yrs=sum(dur)/12,
+            animals=n_distinct(id))
+
+
+```
+
+
+
+##M+F growth rates
+```{r MF growth, results='asis'}
+tribble(
+  ~Growth, ~Years, ~Lambda, 
+"Klinse-Za", "2014-2020", gm_mean(kz$mean$totNMF[20:26]/kz$mean$totNMF[19:25]),
+"Quintette", "2016-2020", gm_mean(qt$mean$totNMF[16:20]/qt$mean$totNMF[15:19]),
+"Quintette", "2017-2020", gm_mean(qt$mean$totNMF[17:20]/qt$mean$totNMF[16:19]))%>%
+  mutate(Lambda=round(Lambda,2))%>%
+gt()%>%
+  tab_header(
+    title = md("Male + Female Population Growth Rates")
+  ) 
 ```
