@@ -826,6 +826,25 @@ kable(summary.vr)
 #   mutate(hb=`AF Survival`/ (1-(Recruitment/(Recruitment+1))))
 ```
 
+## Male + Female Population Growth Rates
+
+``` r
+kable(
+  tribble(
+  ~Growth, ~Years, ~Lambda, 
+"Klinse-Za", "2014-2020", gm_mean(kz$mean$totNMF[20:26]/kz$mean$totNMF[19:25]),
+"Quintette", "2016-2020", gm_mean(qt$mean$totNMF[16:20]/qt$mean$totNMF[15:19]),
+"Quintette", "2017-2020", gm_mean(qt$mean$totNMF[17:20]/qt$mean$totNMF[16:19]))%>%
+  mutate(Lambda=round(Lambda,2))
+)
+```
+
+| Growth    | Years     | Lambda |
+| :-------- | :-------- | -----: |
+| Klinse-Za | 2014-2020 |   1.13 |
+| Quintette | 2016-2020 |   1.01 |
+| Quintette | 2017-2020 |   1.08 |
+
 ## What proportion of non-calf females penned/yr
 
 ``` r
@@ -1038,24 +1057,3 @@ kable(summary.l.refined)
 | Klinse-Za | pre-mgmt                               | 1996-2013 |   0.89 | 0.88-0.9  |
 | Quintette | post-mgmt (refined wolf)               | 2017-2020 |   1.08 | 1.01-1.14 |
 | Quintette | pre-mgmt                               | 2002-2015 |   0.94 | 0.91-0.97 |
-
-## Sample Size Summaries
-
-## Male + Female Population Growth Rates
-
-``` r
-kable(
-  tribble(
-  ~Growth, ~Years, ~Lambda, 
-"Klinse-Za", "2014-2020", gm_mean(kz$mean$totNMF[20:26]/kz$mean$totNMF[19:25]),
-"Quintette", "2016-2020", gm_mean(qt$mean$totNMF[16:20]/qt$mean$totNMF[15:19]),
-"Quintette", "2017-2020", gm_mean(qt$mean$totNMF[17:20]/qt$mean$totNMF[16:19]))%>%
-  mutate(Lambda=round(Lambda,2))
-)
-```
-
-| Growth    | Years     | Lambda |
-| :-------- | :-------- | -----: |
-| Klinse-Za | 2014-2020 |   1.13 |
-| Quintette | 2016-2020 |   1.01 |
-| Quintette | 2017-2020 |   1.08 |

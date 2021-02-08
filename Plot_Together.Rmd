@@ -772,6 +772,19 @@ kable(summary.vr)
 # summary.vr%>%
 #   mutate(hb=`AF Survival`/ (1-(Recruitment/(Recruitment+1))))
 ```
+
+## Male + Female Population Growth Rates
+```{r MF growth, results='asis'}
+kable(
+  tribble(
+  ~Growth, ~Years, ~Lambda, 
+"Klinse-Za", "2014-2020", gm_mean(kz$mean$totNMF[20:26]/kz$mean$totNMF[19:25]),
+"Quintette", "2016-2020", gm_mean(qt$mean$totNMF[16:20]/qt$mean$totNMF[15:19]),
+"Quintette", "2017-2020", gm_mean(qt$mean$totNMF[17:20]/qt$mean$totNMF[16:19]))%>%
+  mutate(Lambda=round(Lambda,2))
+)
+```
+
 ## What proportion of non-calf females penned/yr
 ```{r pen prop,  message=FALSE, warning=FALSE, fig.height=5, fig.width=11}
 penned.prop <- kz %>%
@@ -951,7 +964,8 @@ kable(summary.l.refined)
 ```
 
 
-## Sample Size Summaries
+
+
 ```{r Summarise sample sizes, eval=FALSE, include=FALSE, results='asis'}
 kz.raw <- read_excel("/Users/clayton.lamb/Dropbox/Caribou/JWM_Klinse-za demographics/Analysis/Klinse-zaEackerInputs_200607_CL.xlsx",
                       sheet="SurvivalKlinse-zaSPenFre")%>%
@@ -981,18 +995,4 @@ qt.raw%>%select(id,Year,dur)%>%rbind(kz.raw%>%select(id,Year,dur))%>%
             animals=n_distinct(id))
 
 
-```
-
-
-
-## Male + Female Population Growth Rates
-```{r MF growth, results='asis'}
-kable(
-  tribble(
-  ~Growth, ~Years, ~Lambda, 
-"Klinse-Za", "2014-2020", gm_mean(kz$mean$totNMF[20:26]/kz$mean$totNMF[19:25]),
-"Quintette", "2016-2020", gm_mean(qt$mean$totNMF[16:20]/qt$mean$totNMF[15:19]),
-"Quintette", "2017-2020", gm_mean(qt$mean$totNMF[17:20]/qt$mean$totNMF[16:19]))%>%
-  mutate(Lambda=round(Lambda,2))
-)
 ```
