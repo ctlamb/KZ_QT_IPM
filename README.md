@@ -1,7 +1,7 @@
 KZ and QT IPM results
 ================
 Sara Williams, Hans Martin, and Clayton Lamb
-08 February, 2021
+11 May, 2021
 
 # See folders KZ and QT for the IPM’s for each herd
 
@@ -23,30 +23,32 @@ library(piggyback)
 library(tidybayes)
 library(here)
 
-pb_download("kz_out_rnd_eff.Rdata", 
-            repo = "ctlamb/KZ_QT_IPM",
-            dest = here::here())
-load(here::here("kz_out_rnd_eff.Rdata"))
+# pb_download("kz_out_rnd_eff.Rdata", 
+#             repo = "ctlamb/KZ_QT_IPM",
+#             dest = here::here())
+# load(here::here("kz_out_rnd_eff.Rdata"))
+# kz <- out_rnd_eff
+# unlink(here::here("kz_out_rnd_eff.Rdata"))
+load(here::here("output", "kz_out_rnd_eff.Rdata"))
 kz <- out_rnd_eff
-unlink(here::here("kz_out_rnd_eff.Rdata"))
 
-
-yrs <-  seq(from = 1995, to = 2020, by = 1)
+yrs <-  seq(from = 1995, to = 2021, by = 1)
 nyr <- length(yrs)
 yr_idx <- seq(from = 1, to = nyr, by = 1)
 kz_yr_df <- as.data.frame(cbind(yrs, yr_idx))
 
 
 
-pb_download("qt_out_rnd_eff.Rdata", 
-            repo = "ctlamb/KZ_QT_IPM",
-            dest = here::here())
-load(here::here("qt_out_rnd_eff.Rdata"))
+# pb_download("qt_out_rnd_eff.Rdata", 
+#             repo = "ctlamb/KZ_QT_IPM",
+#             dest = here::here())
+# load(here::here("qt_out_rnd_eff.Rdata"))
+# qt <- out_rnd_eff
+# unlink(here::here("qt_out_rnd_eff.Rdata"))
+load(here::here("output", "qt_out_rnd_eff.Rdata"))
 qt <- out_rnd_eff
-unlink(here::here("qt_out_rnd_eff.Rdata"))
 
-
-yrs <-  seq(from = 2001, to = 2020, by = 1)
+yrs <-  seq(from = 2001, to = 2021, by = 1)
 nyr <- length(yrs)
 yr_idx <- seq(from = 1, to = nyr, by = 1)
 qt_yr_df <- as.data.frame(cbind(yrs, yr_idx))
@@ -356,13 +358,13 @@ validate_vr <- kz_vr%>%mutate(pop=case_when(pop%in%"Free"~"KZ-Wolf",
 ``` r
 ggsave(here::here("plots", "vitalratefit_F.png"), width=9, height=5)
 
-validate_vr%>%filter(param=="Recruitment", pop=="KZ-Wolf + Pen", yrs%in% c(2016:2020))
+validate_vr%>%filter(param=="Recruitment", pop=="KZ-Wolf + Pen", yrs%in% c(2016:2021))
 ```
 
 ## WOLF EFFECT
 
 ``` r
-##Refined Wolf Control== (2017-2020)
+##Refined Wolf Control== (2017-2021)
 
 S <- ggs(qt$samples)%>%
   filter(Parameter%in%c("diff_geom_mean_lambda_post_to_pre","diff_geom_mean_lambda_post_to_pre_iwolf"))%>%
@@ -557,7 +559,7 @@ pop_age%>%
              upper=quantile(value2, 0.95))
 ```
 
-    ## `summarise()` regrouping output by 'group' (override with `.groups` argument)
+    ## `summarise()` has grouped output by 'group'. You can override using the `.groups` argument.
 
 ``` r
   pop_age%>%
@@ -575,9 +577,7 @@ pop_age%>%
              upper=quantile(value2, 0.95))
 ```
 
-    ## `summarise()` regrouping output by 'year' (override with `.groups` argument)
-
-    ## `summarise()` ungrouping output (override with `.groups` argument)
+    ## `summarise()` has grouped output by 'year'. You can override using the `.groups` argument.
 
 ## Summarize simulation population growth
 
@@ -608,8 +608,8 @@ kable(summary.sim)
 | Herd      | Period   | Lambda | 90% CrI   |
 | :-------- | :------- | -----: | :-------- |
 | Klinse-Za | Control  |   0.89 | 0.88-0.9  |
-| Klinse-Za | Wolf     |   0.97 | 0.92-1.02 |
-| Klinse-Za | Wolf+Pen |   1.10 | 1.09-1.1  |
+| Klinse-Za | Wolf     |   0.97 | 0.92-1.03 |
+| Klinse-Za | Wolf+Pen |   1.08 | 1.08-1.09 |
 
 ## Wolf vs Pen effect
 
@@ -664,7 +664,7 @@ rbind(
   select(pop,period,"lambda"=".value","lower"=".lower","upper"=".upper")%>%
   arrange(pop,period)
   
-summary.l$Years <- c("2014-2020", "1996-2012", "2016-2020", "2002-2015")
+summary.l$Years <- c("2014-2021", "1996-2012", "2016-2021", "2002-2015")
 colnames(summary.l) <- c("Herd", "Period", "Lambda", "Lamba.Lower", "Lambda.Upper", "Years")
 
 
@@ -678,9 +678,9 @@ kable(summary.l)
 
 | Herd      | Period    | Years     | Lambda | 90% CrI   |
 | :-------- | :-------- | :-------- | -----: | :-------- |
-| Klinse-Za | post-mgmt | 2014-2020 |   1.07 | 1.05-1.09 |
+| Klinse-Za | post-mgmt | 2014-2021 |   1.08 | 1.06-1.09 |
 | Klinse-Za | pre-mgmt  | 1996-2012 |   0.89 | 0.88-0.9  |
-| Quintette | post-mgmt | 2016-2020 |   1.01 | 0.94-1.08 |
+| Quintette | post-mgmt | 2016-2021 |   1.07 | 1.02-1.12 |
 | Quintette | pre-mgmt  | 2002-2015 |   0.94 | 0.91-0.97 |
 
 ## Summarize effect of treatments
@@ -708,12 +708,12 @@ write_csv(summary.effect,here::here("tables", "treatment_effect.csv"))
 kable(summary.effect)
 ```
 
-| pop       | period     | lambda difference |   lower | upper |
-| :-------- | :--------- | ----------------: | ------: | ----: |
-| Klinse-Za | wolf + pen |             0.179 |   0.157 | 0.202 |
-| Klinse-Za | pen        |             0.100 |   0.048 | 0.151 |
-| Klinse-Za | wolf       |             0.079 |   0.025 | 0.136 |
-| Quintette | wolf       |             0.073 | \-0.020 | 0.164 |
+| pop       | period     | lambda difference | lower | upper |
+| :-------- | :--------- | ----------------: | ----: | ----: |
+| Klinse-Za | wolf + pen |             0.185 | 0.165 | 0.205 |
+| Klinse-Za | pen        |             0.102 | 0.048 | 0.152 |
+| Klinse-Za | wolf       |             0.083 | 0.030 | 0.141 |
+| Quintette | wolf       |             0.133 | 0.055 | 0.205 |
 
 ## Summarize vital rates
 
@@ -795,7 +795,7 @@ summary.vr <- summary.s%>%
     ## Joining, by = c("pop", "period")
 
 ``` r
-summary.vr$Years <- c("2014-2020","2013-2020","2014-2020","1995-2012" , "2016-2020","2002-2015")
+summary.vr$Years <- c("2014-2021","2013-2021","2014-2021","1995-2012" , "2016-2021","2002-2015")
 
 summary.vr <- summary.vr%>%
   mutate(`s CrI`=paste(s.lower,s.upper, sep="-"),
@@ -814,12 +814,12 @@ kable(summary.vr)
 
 | Group     | Period               | Years     | AF Survival | 90% CrI   | Recruitment | r90% CrI  | Recruitment-Adult Only | r.ad.90% CrI |
 | :-------- | :------------------- | :-------- | ----------: | :-------- | ----------: | :-------- | ---------------------: | :----------- |
-| Klinse-Za | post-mgmt (pooled)   | 2014-2020 |        0.87 | 0.85-0.9  |        0.19 | 0.19-0.2  |                   0.25 | 0.22-0.27    |
-| Klinse-Za | post-mgmt (wolf)     | 2013-2020 |        0.85 | 0.8-0.9   |        0.12 | 0.1-0.13  |                   0.20 | 0.16-0.25    |
-| Klinse-Za | post-mgmt (wolf+pen) | 2014-2020 |        0.91 | 0.91-0.91 |        0.28 | 0.28-0.28 |                   0.29 | 0.29-0.29    |
-| Klinse-Za | pre-mgmt             | 1995-2012 |        0.79 | 0.77-0.82 |        0.12 | 0.1-0.13  |                   0.15 | 0.12-0.18    |
-| Quintette | post-mgmt            | 2016-2020 |        0.86 | 0.81-0.9  |        0.18 | 0.15-0.21 |                   0.27 | 0.2-0.35     |
-| Quintette | pre-mgmt             | 2002-2015 |        0.85 | 0.82-0.87 |        0.12 | 0.11-0.14 |                   0.18 | 0.14-0.51    |
+| Klinse-Za | post-mgmt (pooled)   | 2014-2021 |        0.87 | 0.84-0.89 |        0.20 | 0.19-0.21 |                   0.26 | 0.23-0.29    |
+| Klinse-Za | post-mgmt (wolf)     | 2013-2021 |        0.84 | 0.79-0.89 |        0.14 | 0.12-0.15 |                   0.22 | 0.18-0.26    |
+| Klinse-Za | post-mgmt (wolf+pen) | 2014-2021 |        0.90 | 0.9-0.9   |        0.28 | 0.28-0.28 |                   0.30 | 0.3-0.3      |
+| Klinse-Za | pre-mgmt             | 1995-2012 |        0.78 | 0.76-0.81 |        0.14 | 0.12-0.15 |                   0.17 | 0.14-0.21    |
+| Quintette | post-mgmt            | 2016-2021 |        0.88 | 0.84-0.91 |        0.19 | 0.17-0.21 |                   0.32 | 0.27-0.39    |
+| Quintette | pre-mgmt             | 2002-2015 |        0.85 | 0.82-0.87 |        0.14 | 0.12-0.15 |                   0.20 | 0.15-0.56    |
 
 ``` r
 # summary.vr%>%
@@ -832,18 +832,18 @@ kable(summary.vr)
 kable(
   tribble(
   ~Growth, ~Years, ~Lambda, 
-"Klinse-Za", "2014-2020", gm_mean(kz$mean$totNMF[20:26]/kz$mean$totNMF[19:25]),
-"Quintette", "2016-2020", gm_mean(qt$mean$totNMF[16:20]/qt$mean$totNMF[15:19]),
-"Quintette", "2017-2020", gm_mean(qt$mean$totNMF[17:20]/qt$mean$totNMF[16:19]))%>%
+"Klinse-Za", "2014-2021", gm_mean(kz$mean$totNMF[20:27]/kz$mean$totNMF[19:26]),
+"Quintette", "2016-2021", gm_mean(qt$mean$totNMF[16:21]/qt$mean$totNMF[15:20]),
+"Quintette", "2017-2021", gm_mean(qt$mean$totNMF[17:21]/qt$mean$totNMF[16:20]))%>%
   mutate(Lambda=round(Lambda,2))
 )
 ```
 
 | Growth    | Years     | Lambda |
 | :-------- | :-------- | -----: |
-| Klinse-Za | 2014-2020 |   1.13 |
-| Quintette | 2016-2020 |   1.01 |
-| Quintette | 2017-2020 |   1.08 |
+| Klinse-Za | 2014-2021 |   1.12 |
+| Quintette | 2016-2021 |   1.07 |
+| Quintette | 2017-2021 |   1.14 |
 
 ## What proportion of non-calf females penned/yr
 
@@ -1001,13 +1001,13 @@ write_csv(summary.effect.refined,here::here("tables", "refined_treatment_effect.
 kable(summary.effect.refined)
 ```
 
-| pop       | period                     | lambda difference |   lower | upper |
-| :-------- | :------------------------- | ----------------: | ------: | ----: |
-| Klinse-Za | wolf + refined pen         |             0.172 |   0.147 | 0.198 |
-| Klinse-Za | refined wolf + refined pen |             0.155 |   0.125 | 0.185 |
-| Klinse-Za | refined pen                |             0.100 |   0.044 | 0.159 |
-| Klinse-Za | refined wolf               |             0.046 | \-0.032 | 0.116 |
-| Quintette | Refined wolf               |             0.138 |   0.062 | 0.214 |
+| pop       | period                     | lambda difference | lower | upper |
+| :-------- | :------------------------- | ----------------: | ----: | ----: |
+| Klinse-Za | wolf + refined pen         |             0.181 | 0.161 | 0.203 |
+| Klinse-Za | refined wolf + refined pen |             0.170 | 0.147 | 0.193 |
+| Klinse-Za | refined pen                |             0.098 | 0.041 | 0.152 |
+| Klinse-Za | refined wolf               |             0.066 | 0.003 | 0.132 |
+| Quintette | Refined wolf               |             0.198 | 0.155 | 0.242 |
 
 ## Summarize refined period population growth
 
@@ -1036,7 +1036,7 @@ rbind(
   select(pop,period,"lambda"=".value","lower"=".lower","upper"=".upper")%>%
   arrange(pop,period)
   
-summary.l.refined$Years <- c("2016-2020", "2017-2020","2017-2020", "2016-2020","1996-2013", "2017-2020", "2002-2015")
+summary.l.refined$Years <- c("2016-2021", "2017-2021","2017-2021", "2016-2021","1996-2013", "2017-2021", "2002-2015")
 colnames(summary.l.refined) <- c("Herd", "Period", "Lambda", "Lamba.Lower", "Lambda.Upper", "Years")
 
 
@@ -1050,10 +1050,10 @@ kable(summary.l.refined)
 
 | Herd      | Period                                 | Years     | Lambda | 90% CrI   |
 | :-------- | :------------------------------------- | :-------- | -----: | :-------- |
-| Klinse-Za | post-mgmt (refined pen)                | 2016-2020 |   1.13 | 1.13-1.13 |
-| Klinse-Za | post-mgmt (refined wolf + refined pen) | 2017-2020 |   1.05 | 1.02-1.07 |
-| Klinse-Za | post-mgmt (refined wolf)               | 2017-2020 |   0.94 | 0.86-1.01 |
-| Klinse-Za | post-mgmt (wolf + refined pen)         | 2016-2020 |   1.06 | 1.04-1.09 |
+| Klinse-Za | post-mgmt (refined pen)                | 2016-2021 |   1.11 | 1.11-1.11 |
+| Klinse-Za | post-mgmt (refined wolf + refined pen) | 2017-2021 |   1.06 | 1.04-1.08 |
+| Klinse-Za | post-mgmt (refined wolf)               | 2017-2021 |   0.96 | 0.89-1.02 |
+| Klinse-Za | post-mgmt (wolf + refined pen)         | 2016-2021 |   1.07 | 1.05-1.09 |
 | Klinse-Za | pre-mgmt                               | 1996-2013 |   0.89 | 0.88-0.9  |
-| Quintette | post-mgmt (refined wolf)               | 2017-2020 |   1.08 | 1.01-1.14 |
+| Quintette | post-mgmt (refined wolf)               | 2017-2021 |   1.14 | 1.11-1.17 |
 | Quintette | pre-mgmt                               | 2002-2015 |   0.94 | 0.91-0.97 |
