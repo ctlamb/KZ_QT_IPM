@@ -45,13 +45,14 @@ model{
 		logit(R[yr,1]) <- cR_mu + r_yr[yr]
 		}
 		
-	#Add known pen animal survival. This is an estimate from a full population, not a sample. All animals are marked and known.
-		S[20,2] <- 0.8
-		S[21,2] <- 1
-		S[22,2] <- 1
-		S[23,2] <- 0.89
-		S[24,2] <- 0.86
-		S[25,2] <- 0.94
+	#Add known pen animal survival. This is an estimate from a full population, not a sample. All animals are marked and known. fraction is # of penned females that lived to next March
+		S[20,2] <- (8/10)
+		S[21,2] <- (11/11)
+		S[22,2] <- (13/14)
+		S[23,2] <- (8/9)
+		S[24,2] <- (10/12)
+		S[25,2] <- (16/17)
+		S[26,2] <- (13/14)
 
 	##########################################################################
 	#  Process model - 3 ages, 2 pop
@@ -206,56 +207,56 @@ for(yr in 2:nyr){
 	#  Summarize Lambda
 	# Pre-Post
 		 geom_mean_lambda_prepen <- prod(lambda[2:19])^(1/length(lambda[2:19]))
-	   geom_mean_lambda_postpen <- prod(lambda[21:26])^(1/length(lambda[21:26]))
-	   geom_mean_lambda_postwolf <- prod(lambda[20:26])^(1/length(lambda[20:26]))
+	   geom_mean_lambda_postpen <- prod(lambda[21:27])^(1/length(lambda[21:27]))
+	   geom_mean_lambda_postwolf <- prod(lambda[20:27])^(1/length(lambda[20:27]))
 	   diff_geom_mean_lambda_post_to_pre <- geom_mean_lambda_postwolf - geom_mean_lambda_prepen
 	   diff_geom_mean_lambda_post_to_pre_iwolf <- geom_mean_lambda_postpen_iWolf - geom_mean_lambda_prepen
 	   diff_geom_mean_lambda_post_to_pre_ipen <- geom_mean_lambda_postpen_iPen - geom_mean_lambda_prepen
 	
 	
 	# #  Treatment Simulations
-	 geom_mean_lambda_SimPen <- prod(lambdaSimP[2:7])^(1/length(lambdaSimP[2:7]))
-	 tmp1_SimC <- prod(lambdaSimC[2:7])
-	 tmp2_SimC <- 1/length(lambdaSimC[2:7])
+	 geom_mean_lambda_SimPen <- prod(lambdaSimP[2:8])^(1/length(lambdaSimP[2:8]))
+	 tmp1_SimC <- prod(lambdaSimC[2:8])
+	 tmp2_SimC <- 1/length(lambdaSimC[2:8])
 	 geom_mean_lambda_SimC <- tmp1_SimC^tmp2_SimC
 
-	 tmp1_SimC2 <- prod(lambdaSimC2[2:8])
-	 tmp2_SimC2 <- 1/length(lambdaSimC2[2:8])
+	 tmp1_SimC2 <- prod(lambdaSimC2[2:9])
+	 tmp2_SimC2 <- 1/length(lambdaSimC2[2:9])
 	 geom_mean_lambda_SimC2 <- tmp1_SimC2^tmp2_SimC2
 
 
 	 # wolf intensity
-	 geom_mean_lambda_postpen_iWolf <- prod(lambda[23:26])^(1/length(lambda[23:26]))
-	 geom_mean_lambda_SimPen_iWolf <- prod(lambdaSimP[4:7])^(1/length(lambdaSimP[4:7]))
-	  tmp1_SimC2_iWolf <- prod(lambdaSimC[4:7])
-	  tmp2_SimC2_iWolf <- 1/length(lambdaSimC[4:7])
+	 geom_mean_lambda_postpen_iWolf <- prod(lambda[23:27])^(1/length(lambda[23:27]))
+	 geom_mean_lambda_SimPen_iWolf <- prod(lambdaSimP[4:8])^(1/length(lambdaSimP[4:8]))
+	  tmp1_SimC2_iWolf <- prod(lambdaSimC[4:8])
+	  tmp2_SimC2_iWolf <- 1/length(lambdaSimC[4:8])
 	 geom_mean_lambda_SimC_iWolf <- tmp1_SimC2_iWolf^tmp2_SimC2_iWolf
 	 
 	 	 # pen intensity
-	 geom_mean_lambda_postpen_iPen <- prod(lambda[22:26])^(1/length(lambda[22:26]))
-	 geom_mean_lambda_SimPen_iPen <- prod(lambdaSimP[3:7])^(1/length(lambdaSimP[3:7]))
-	  tmp1_SimC2_ipen <- prod(lambdaSimC[3:7])
-	  tmp2_SimC2_ipen <- 1/length(lambdaSimC[3:7])
+	 geom_mean_lambda_postpen_iPen <- prod(lambda[22:27])^(1/length(lambda[22:27]))
+	 geom_mean_lambda_SimPen_iPen <- prod(lambdaSimP[3:8])^(1/length(lambdaSimP[3:8]))
+	  tmp1_SimC2_ipen <- prod(lambdaSimC[3:8])
+	  tmp2_SimC2_ipen <- 1/length(lambdaSimC[3:8])
 	 geom_mean_lambda_SimC_ipen <- tmp1_SimC2_ipen^tmp2_SimC2_ipen
   
  #  Summarize Vital Rates
 	 mean_surv_pre <- prod(S[1:18,1])^(1/length(S[1:18,1]))
-	 mean_surv_pen <- prod(S[20:25,2])^(1/length(S[20:25,2]))
-	 mean_surv_wolf <- prod(S[19:25,1])^(1/length(S[19:25,1]))
+	 mean_surv_pen <- prod(S[20:26,2])^(1/length(S[20:26,2]))
+	 mean_surv_wolf <- prod(S[19:26,1])^(1/length(S[19:26,1]))
 
 ##use mean here as opposed to geo mean due to derived parameter that goes slightly negative at times at lower CI and causes issues.
 	 mean_r_pre <- mean(R[2:19,1])
-	 mean_r_pen <- mean(R[21:26,2])
-	 mean_r_wolf <- mean(R[20:26,1])
+	 mean_r_pen <- mean(R[21:27,2])
+	 mean_r_wolf <- mean(R[20:27,1])
 
 	 mean_r3_pre <- mean(R.ad[2:19,1])
-	 mean_r3_pen <- mean(R.sim[21:26,2])
-	 mean_r3_wolf <- mean(R.ad[20:26,1])
+	 mean_r3_pen <- mean(R.sim[21:27,2])
+	 mean_r3_wolf <- mean(R.ad[20:27,1])
 	 
 	  #  Weighted average pooled vital rates
-    mean_surv_post_pooled <- mean((S[20:25,2]*penprop[21:26])+(S[20:25,1]*(1-penprop[21:26])))
-    mean_r_post_pooled <- mean((R[21:26,2]*penprop[21:26])+(R[21:26,1]*(1-penprop[21:26])))
-    mean_r3_post_pooled <- mean((R.sim[21:26,2]*penprop[21:26])+(R.ad[21:26,1]*(1-penprop[21:26])))
+    mean_surv_post_pooled <- mean((S[20:26,2]*penprop[21:27])+(S[20:26,1]*(1-penprop[21:27])))
+    mean_r_post_pooled <- mean((R[21:27,2]*penprop[21:27])+(R[21:27,1]*(1-penprop[21:27])))
+    mean_r3_post_pooled <- mean((R.sim[21:27,2]*penprop[21:27])+(R.ad[21:27,1]*(1-penprop[21:27])))
 	
 	# ##pen vs wolf control effects
 	 wolf_eff_proportion <- wolf_eff/diff_geom_mean_lambda_post_to_pre

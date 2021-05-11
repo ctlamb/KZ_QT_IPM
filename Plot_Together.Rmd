@@ -30,30 +30,32 @@ library(piggyback)
 library(tidybayes)
 library(here)
 
-pb_download("kz_out_rnd_eff.Rdata", 
-            repo = "ctlamb/KZ_QT_IPM",
-            dest = here::here())
-load(here::here("kz_out_rnd_eff.Rdata"))
+# pb_download("kz_out_rnd_eff.Rdata", 
+#             repo = "ctlamb/KZ_QT_IPM",
+#             dest = here::here())
+# load(here::here("kz_out_rnd_eff.Rdata"))
+# kz <- out_rnd_eff
+# unlink(here::here("kz_out_rnd_eff.Rdata"))
+load(here::here("output", "kz_out_rnd_eff.Rdata"))
 kz <- out_rnd_eff
-unlink(here::here("kz_out_rnd_eff.Rdata"))
 
-
-yrs <-  seq(from = 1995, to = 2020, by = 1)
+yrs <-  seq(from = 1995, to = 2021, by = 1)
 nyr <- length(yrs)
 yr_idx <- seq(from = 1, to = nyr, by = 1)
 kz_yr_df <- as.data.frame(cbind(yrs, yr_idx))
 
 
 
-pb_download("qt_out_rnd_eff.Rdata", 
-            repo = "ctlamb/KZ_QT_IPM",
-            dest = here::here())
-load(here::here("qt_out_rnd_eff.Rdata"))
+# pb_download("qt_out_rnd_eff.Rdata", 
+#             repo = "ctlamb/KZ_QT_IPM",
+#             dest = here::here())
+# load(here::here("qt_out_rnd_eff.Rdata"))
+# qt <- out_rnd_eff
+# unlink(here::here("qt_out_rnd_eff.Rdata"))
+load(here::here("output", "qt_out_rnd_eff.Rdata"))
 qt <- out_rnd_eff
-unlink(here::here("qt_out_rnd_eff.Rdata"))
 
-
-yrs <-  seq(from = 2001, to = 2020, by = 1)
+yrs <-  seq(from = 2001, to = 2021, by = 1)
 nyr <- length(yrs)
 yr_idx <- seq(from = 1, to = nyr, by = 1)
 qt_yr_df <- as.data.frame(cbind(yrs, yr_idx))
@@ -355,14 +357,14 @@ validate_vr <- kz_vr%>%mutate(pop=case_when(pop%in%"Free"~"KZ-Wolf",
 
 ggsave(here::here("plots", "vitalratefit_F.png"), width=9, height=5)
 
-validate_vr%>%filter(param=="Recruitment", pop=="KZ-Wolf + Pen", yrs%in% c(2016:2020))
+validate_vr%>%filter(param=="Recruitment", pop=="KZ-Wolf + Pen", yrs%in% c(2016:2021))
             
 ```
 
 
 ## WOLF EFFECT
 ```{r wolf, results='hide', message=FALSE, warning=FALSE,fig.height=5, fig.width=6}
-##Refined Wolf Control== (2017-2020)
+##Refined Wolf Control== (2017-2021)
 
 S <- ggs(qt$samples)%>%
   filter(Parameter%in%c("diff_geom_mean_lambda_post_to_pre","diff_geom_mean_lambda_post_to_pre_iwolf"))%>%
@@ -639,7 +641,7 @@ rbind(
   select(pop,period,"lambda"=".value","lower"=".lower","upper"=".upper")%>%
   arrange(pop,period)
   
-summary.l$Years <- c("2014-2020", "1996-2012", "2016-2020", "2002-2015")
+summary.l$Years <- c("2014-2021", "1996-2012", "2016-2021", "2002-2015")
 colnames(summary.l) <- c("Herd", "Period", "Lambda", "Lamba.Lower", "Lambda.Upper", "Years")
 
 
@@ -753,7 +755,7 @@ summary.vr <- summary.s%>%
   mutate_if(is.numeric,function(x) round(x,2))
 
 
-summary.vr$Years <- c("2014-2020","2013-2020","2014-2020","1995-2012" , "2016-2020","2002-2015")
+summary.vr$Years <- c("2014-2021","2013-2021","2014-2021","1995-2012" , "2016-2021","2002-2015")
 
 summary.vr <- summary.vr%>%
   mutate(`s CrI`=paste(s.lower,s.upper, sep="-"),
@@ -778,9 +780,9 @@ kable(summary.vr)
 kable(
   tribble(
   ~Growth, ~Years, ~Lambda, 
-"Klinse-Za", "2014-2020", gm_mean(kz$mean$totNMF[20:26]/kz$mean$totNMF[19:25]),
-"Quintette", "2016-2020", gm_mean(qt$mean$totNMF[16:20]/qt$mean$totNMF[15:19]),
-"Quintette", "2017-2020", gm_mean(qt$mean$totNMF[17:20]/qt$mean$totNMF[16:19]))%>%
+"Klinse-Za", "2014-2021", gm_mean(kz$mean$totNMF[20:27]/kz$mean$totNMF[19:26]),
+"Quintette", "2016-2021", gm_mean(qt$mean$totNMF[16:21]/qt$mean$totNMF[15:20]),
+"Quintette", "2017-2021", gm_mean(qt$mean$totNMF[17:21]/qt$mean$totNMF[16:20]))%>%
   mutate(Lambda=round(Lambda,2))
 )
 ```
@@ -951,7 +953,7 @@ rbind(
   select(pop,period,"lambda"=".value","lower"=".lower","upper"=".upper")%>%
   arrange(pop,period)
   
-summary.l.refined$Years <- c("2016-2020", "2017-2020","2017-2020", "2016-2020","1996-2013", "2017-2020", "2002-2015")
+summary.l.refined$Years <- c("2016-2021", "2017-2021","2017-2021", "2016-2021","1996-2013", "2017-2021", "2002-2015")
 colnames(summary.l.refined) <- c("Herd", "Period", "Lambda", "Lamba.Lower", "Lambda.Upper", "Years")
 
 
@@ -978,20 +980,20 @@ qt.raw <- read_excel("/Users/clayton.lamb/Dropbox/Caribou/JWM_Klinse-za demograp
 
 kz.raw%>%
   filter(Year<=2013)%>%
-  summarise(an.yrs=sum(dur)/12,
+  summarise(an.yrs=sum(dur)/13, ##these were all 12
             animals=n_distinct(id))
 
 kz.raw%>%
   filter(Year>2013)%>%
-  summarise(an.yrs=sum(dur)/12,
+  summarise(an.yrs=sum(dur)/13,
             animals=n_distinct(id))
 
 qt.raw%>%
-  summarise(an.yrs=sum(dur)/12,
+  summarise(an.yrs=sum(dur)/13,
             animals=n_distinct(id))
 
 qt.raw%>%select(id,Year,dur)%>%rbind(kz.raw%>%select(id,Year,dur))%>%
-    summarise(an.yrs=sum(dur)/12,
+    summarise(an.yrs=sum(dur)/13,
             animals=n_distinct(id))
 
 

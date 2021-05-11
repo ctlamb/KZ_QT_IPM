@@ -95,7 +95,7 @@ ggplot(sightability, aes(x = Year, y = mean)) +
 ##Prep for IPM
 ```{r Prep for IPM, results='hide', message=FALSE, warning=FALSE}
 #  Years of study
-yrs <-  seq(from = 2001, to = 2020, by = 1)
+yrs <-  seq(from = 2001, to = 2021, by = 1)
 nyr <- length(yrs)
 yr_idx <- seq(from = 1, to = nyr, by = 1)
 yr_df <- as.data.frame(cbind(yrs, yr_idx))
@@ -269,29 +269,7 @@ out_rnd_eff <- jagsUI::jags(ipm_dat,
 	n.thin = nt,
 	n.adapt = nad)
 
-###save output, using piggyback because too large for github, then delete file so it doesn't upload
-# ##need a github token
-# ##get yours here:
-# browse_github_pat()
-# github_token()
-# ##Add to your r environ 
-#  
-# ##bring up R envir using this command below
-# edit_r_environ()
-# 
-# #add this line
-# GITHUB_TOKEN="***ADD TOKEN HERE***"
-#
-#
-###OR for 1 time use add it here and run
-#Sys.setenv(GITHUB_TOKEN="***ADD TOKEN HERE***")
-
-save(out_rnd_eff, file = here::here("QT", "qt_out_rnd_eff.Rdata"))
-pb_upload(here::here("QT", "qt_out_rnd_eff.Rdata"), 
-          repo = "ctlamb/KZ_QT_IPM", 
-          tag = "v0.0.1",
-          overwrite=TRUE)
-unlink(here::here("QT", "qt_out_rnd_eff.Rdata"))
+save(out_rnd_eff, file = here::here("output", "qt_out_rnd_eff.Rdata"))
 
 ```
 
@@ -527,7 +505,7 @@ summary.vr <- summary.s%>%
   left_join(summary.r3)%>%
   mutate_if(is.numeric,function(x) round(x,2))
 
-summary.vr$Years <- c("2002-2015", "2016-2020")
+summary.vr$Years <- c("2002-2015", "2016-2021")
 
 summary.vr <- summary.vr%>%
   mutate(`s 95% CI`=paste(s.lower,s.upper, sep="-"),
@@ -556,7 +534,7 @@ summary.l <- tribble(
   mutate_if(is.numeric,function(x) round(x,2))
 
 
-summary.l$Years <- c("2002-2015", "2016-2020", "2017-2020")
+summary.l$Years <- c("2002-2015", "2016-2021", "2017-2021")
 colnames(summary.l) <- c("Group", "Lambda", "Lamba.Lower", "Lambda.Upper", "Years")
 
 summary.l <- summary.l%>%
@@ -587,8 +565,8 @@ gt(summary.effect)%>%
 
 S <- ggs(out_rnd_eff$samples)%>%
   filter(Parameter%in%c("diff_geom_mean_lambda_post_to_pre","diff_geom_mean_lambda_post_to_pre_iwolf"))%>%
-  mutate(Parameter=case_when(Parameter%in%"diff_geom_mean_lambda_post_to_pre"~"All Wolf Control (2016-2020)",
-                             Parameter%in%"diff_geom_mean_lambda_post_to_pre_iwolf"~"Intense Wolf Control (2017-2020)"
+  mutate(Parameter=case_when(Parameter%in%"diff_geom_mean_lambda_post_to_pre"~"All Wolf Control (2016-2021)",
+                             Parameter%in%"diff_geom_mean_lambda_post_to_pre_iwolf"~"Intense Wolf Control (2017-2021)"
                              ))
 
 ggplot(S, aes(x = value,fill=Parameter)) +

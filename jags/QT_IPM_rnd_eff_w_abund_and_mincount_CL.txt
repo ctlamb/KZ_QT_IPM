@@ -152,21 +152,21 @@ model{
 	#  Summarize Lambda
 	##PRE-POST
 	geom_mean_lambda_pre <- prod(lambda[2:15])^(1/length(lambda[2:15]))
-	geom_mean_lambda_post<- prod(lambda[16:20])^(1/length(lambda[16:20]))
-	geom_mean_lambda_post_iwolf <- prod(lambda[17:20])^(1/length(lambda[17:20]))
+	geom_mean_lambda_post<- prod(lambda[16:21])^(1/length(lambda[16:21]))
+	geom_mean_lambda_post_iwolf <- prod(lambda[17:21])^(1/length(lambda[17:21]))
 	diff_geom_mean_lambda_post_to_pre <- geom_mean_lambda_post - geom_mean_lambda_pre
 	diff_geom_mean_lambda_post_to_pre_iwolf <- geom_mean_lambda_post_iwolf - geom_mean_lambda_pre
 
 	#  Summarize Vital Rates
 	mean_surv_pre <- prod(S[1:14])^(1/length(S[1:14]))
-	mean_surv_post <- prod(S[15:19])^(1/length(S[15:19]))
+	mean_surv_post <- prod(S[15:20])^(1/length(S[15:20]))
 
 	##have to use mean here as opposed to geo mean due to derived parameter that goes slightly negative at times at lower CI and causes issues.
 	 mean_r_pre <- mean(R[2:15])
-	 mean_r_post <- mean(R[16:20])
+	 mean_r_post <- mean(R[16:21])
 
 	 mean_r3_pre <- mean(R.ad[2:15])
-	 mean_r3_post <- mean(R.ad[16:20])
+	 mean_r3_post <- mean(R.ad[16:21])
 
 
 
@@ -175,8 +175,8 @@ model{
 	################################
 	#  Summarize Lambda
 	#geom_mean_lambda_pre_hans <- (exp(1)^sum(logla[2:15]))^(1/(length(logla[2:15])))
-	#geom_mean_lambda_post_hans<- (exp(1)^sum(logla[16:20]))^(1/(length(logla[16:20])))
-	#geom_mean_lambda_post_iwolf_hans <- (exp(1)^sum(logla[17:20]))^(1/(length(logla[17:20])))
+	#geom_mean_lambda_post_hans<- (exp(1)^sum(logla[16:21]))^(1/(length(logla[16:21])))
+	#geom_mean_lambda_post_iwolf_hans <- (exp(1)^sum(logla[17:21]))^(1/(length(logla[17:21])))
 	#diff_geom_mean_lambda_post_to_pre_hans <- geom_mean_lambda_post_hams - geom_mean_lambda_pre_hams
 	#diff_geom_mean_lambda_post_to_pre_iwolf_hans <- geom_mean_lambda_post_iwolf_hams - geom_mean_lambda_pre_hams
 
