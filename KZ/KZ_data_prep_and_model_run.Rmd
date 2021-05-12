@@ -600,6 +600,30 @@ ggplot(aes(x = yrs, y = est, fill=class)) +
   expand_limits(y=0)
 
 
+raw.abund.f <-data.frame(param="F_Count",
+                                         est=count_dat$F_max/count_dat$Mean_Sightability,
+                                         q2.5=NA,
+                                         q97.5=NA,
+                                         yrs=yr_df$yrs,
+                                         yr_idx=NA)%>%
+  select(colnames(res_df))
+
+
+res_df%>%filter(param%in%"totN")%>%mutate(class="modelled")%>%
+  rbind(raw.abund.f%>%as.data.frame()%>%mutate(class="observed"))%>%
+  filter(param%in%c("totN", "F_Count"))%>%
+ggplot(aes(x = yrs, y = est, fill=class)) +
+  geom_cloud(aes( ymin=q2.5, ymax=q97.5),steps=20, max_alpha = 1,se_mult=1.96)+
+  geom_line(aes(color=class)) +
+  geom_point(aes(color=class)) +
+  theme_ipsum()+
+  theme_ipsum()+
+  labs(x="Year", y="Female Abundance", title="Comparing modelled vs observed population estimates")+
+    geom_vline(xintercept = 2013.5)+
+  geom_vline(xintercept = 2014.5,linetype="dashed")+
+  expand_limits(y=0)
+
+
 ```
 ## POP SIMULATION--PARTITION EFFECTS OF PEN vs FREE
 ```{r Popsim, fig.height=6, fig.width=6, results='asis'}

@@ -609,7 +609,7 @@ kable(summary.sim)
 | :-------- | :------- | -----: | :-------- |
 | Klinse-Za | Control  |   0.89 | 0.88-0.9  |
 | Klinse-Za | Wolf     |   0.97 | 0.92-1.03 |
-| Klinse-Za | Wolf+Pen |   1.08 | 1.08-1.09 |
+| Klinse-Za | Wolf+Pen |   1.09 | 1.08-1.09 |
 
 ## Wolf vs Pen effect
 
@@ -678,7 +678,7 @@ kable(summary.l)
 
 | Herd      | Period    | Years     | Lambda | 90% CrI   |
 | :-------- | :-------- | :-------- | -----: | :-------- |
-| Klinse-Za | post-mgmt | 2014-2021 |   1.08 | 1.06-1.09 |
+| Klinse-Za | post-mgmt | 2014-2021 |   1.07 | 1.06-1.09 |
 | Klinse-Za | pre-mgmt  | 1996-2012 |   0.89 | 0.88-0.9  |
 | Quintette | post-mgmt | 2016-2021 |   1.07 | 1.02-1.12 |
 | Quintette | pre-mgmt  | 2002-2015 |   0.94 | 0.91-0.97 |
@@ -710,9 +710,9 @@ kable(summary.effect)
 
 | pop       | period     | lambda difference | lower | upper |
 | :-------- | :--------- | ----------------: | ----: | ----: |
-| Klinse-Za | wolf + pen |             0.185 | 0.165 | 0.205 |
-| Klinse-Za | pen        |             0.102 | 0.048 | 0.152 |
-| Klinse-Za | wolf       |             0.083 | 0.030 | 0.141 |
+| Klinse-Za | wolf + pen |             0.182 | 0.162 | 0.202 |
+| Klinse-Za | pen        |             0.104 | 0.049 | 0.154 |
+| Klinse-Za | wolf       |             0.077 | 0.025 | 0.138 |
 | Quintette | wolf       |             0.133 | 0.055 | 0.205 |
 
 ## Summarize vital rates
@@ -814,10 +814,10 @@ kable(summary.vr)
 
 | Group     | Period               | Years     | AF Survival | 90% CrI   | Recruitment | r90% CrI  | Recruitment-Adult Only | r.ad.90% CrI |
 | :-------- | :------------------- | :-------- | ----------: | :-------- | ----------: | :-------- | ---------------------: | :----------- |
-| Klinse-Za | post-mgmt (pooled)   | 2014-2021 |        0.87 | 0.84-0.89 |        0.20 | 0.19-0.21 |                   0.26 | 0.23-0.29    |
-| Klinse-Za | post-mgmt (wolf)     | 2013-2021 |        0.84 | 0.79-0.89 |        0.14 | 0.12-0.15 |                   0.22 | 0.18-0.26    |
+| Klinse-Za | post-mgmt (pooled)   | 2014-2021 |        0.86 | 0.84-0.89 |        0.20 | 0.2-0.21  |                   0.26 | 0.23-0.29    |
+| Klinse-Za | post-mgmt (wolf)     | 2013-2021 |        0.83 | 0.79-0.89 |        0.14 | 0.12-0.15 |                   0.22 | 0.18-0.27    |
 | Klinse-Za | post-mgmt (wolf+pen) | 2014-2021 |        0.90 | 0.9-0.9   |        0.28 | 0.28-0.28 |                   0.30 | 0.3-0.3      |
-| Klinse-Za | pre-mgmt             | 1995-2012 |        0.78 | 0.76-0.81 |        0.14 | 0.12-0.15 |                   0.17 | 0.14-0.21    |
+| Klinse-Za | pre-mgmt             | 1995-2012 |        0.79 | 0.76-0.81 |        0.14 | 0.12-0.15 |                   0.17 | 0.14-0.21    |
 | Quintette | post-mgmt            | 2016-2021 |        0.88 | 0.84-0.91 |        0.19 | 0.17-0.21 |                   0.32 | 0.27-0.39    |
 | Quintette | pre-mgmt             | 2002-2015 |        0.85 | 0.82-0.87 |        0.14 | 0.12-0.15 |                   0.20 | 0.15-0.56    |
 
@@ -1003,10 +1003,10 @@ kable(summary.effect.refined)
 
 | pop       | period                     | lambda difference | lower | upper |
 | :-------- | :------------------------- | ----------------: | ----: | ----: |
-| Klinse-Za | wolf + refined pen         |             0.181 | 0.161 | 0.203 |
-| Klinse-Za | refined wolf + refined pen |             0.170 | 0.147 | 0.193 |
-| Klinse-Za | refined pen                |             0.098 | 0.041 | 0.152 |
-| Klinse-Za | refined wolf               |             0.066 | 0.003 | 0.132 |
+| Klinse-Za | wolf + refined pen         |             0.179 | 0.158 | 0.200 |
+| Klinse-Za | refined wolf + refined pen |             0.168 | 0.144 | 0.191 |
+| Klinse-Za | refined pen                |             0.100 | 0.041 | 0.153 |
+| Klinse-Za | refined wolf               |             0.065 | 0.003 | 0.131 |
 | Quintette | Refined wolf               |             0.198 | 0.155 | 0.242 |
 
 ## Summarize refined period population growth
