@@ -37,7 +37,7 @@ gm_mean = function(a){prod(a)^(1/length(a))}
 # Read in raw data
 adult_female_survival <- read.csv(here::here("data", "KZ", "adult_female_survival_KZ.csv"))
 adult_female_recruit <- read.csv(here::here("data", "KZ", "adult_female_recruit_KZ.csv"))
-adult_sex_ratio <- read.csv(here::here("data", "KZ", "adult_sexratio_KZ_withimm.csv"))
+
 
 # Mincounts and abundance estimates and SD's (both adult and calf), remove min counts <80% sightability
 count_dat <- read_xlsx(here::here("data", "KZ", "Count_summary_KZ.xlsx"))%>%
@@ -110,7 +110,7 @@ sim_yrs2 <- yr_df %>%
 wolfpen_ind <- adult_female_pencount_in$Wolf_control_pen
 
 #  Create vectors of sex ratio
-adult_sex_ratio <- adult_sex_ratio$Mean
+adult_sex_ratio <- count_dat$SexRatio
 
 #  Create vectors of known numbers of adult females and calves going into and coming out  of pen
 nPen <- adult_female_pencount_in$Mean
@@ -123,7 +123,7 @@ adult_female_recruit <- adult_female_recruit %>%
 
 meanr <- array(NA, c(1,1,2)) 
 meanr[1,1,1] <- mean(adult_female_recruit$Mean, na.rm = TRUE)
-meanr[1,1,2] <- 100
+meanr[1,1,2] <- 0.01
 
 
 # Survival - need estimates for both penned and control (not penned) population units
@@ -132,12 +132,12 @@ means <- array(NA, c(1,2,2))
 adult_female_survival_control <- adult_female_survival %>%
 	dplyr::filter(Pop == 1) 
 means[1,1,1] <- mean(adult_female_survival_control$Mean, na.rm = TRUE)
-means[1,1,2] <- 100
+means[1,1,2] <- 0.01
 
 adult_female_survival_pen <- adult_female_survival %>%
 	dplyr::filter(Pop == 2) 
 means[1,2,1] <- mean(adult_female_survival_pen$Mean, na.rm = TRUE)
-means[1,2,2] <- 100
+means[1,2,2] <- 0.01
 
 
 # Starting population size of population unit (vector of values for each age class)
@@ -154,7 +154,6 @@ sdat <- adult_female_survival %>%
 		pop = Pop,
 		mu = ifelse(Mean!= 1, Mean, 0.99),
 		tau = 1/ (SD * SD)) %>%
-		#tau = 500) %>%
 	dplyr::filter(!is.na(mu)) %>%
 	left_join(yr_df, by = c("Year" = "yrs")) %>%
 	dplyr::select(dau, yr = yr_idx, age, pop, mu, tau)
@@ -169,7 +168,6 @@ rdat <- adult_female_recruit  %>%
 		pop = Pop,
 		mu = Mean,
 		tau = 1/ (SD * SD)) %>%
-		#tau = 0.1) %>%
 	dplyr::filter(!is.na(mu)) %>%
 	left_join(yr_df, by = c("Year" = "yrs")) %>%
 	dplyr::select(dau, yr = yr_idx, age, pop, mu, tau) 

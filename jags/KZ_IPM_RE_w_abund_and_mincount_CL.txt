@@ -29,6 +29,7 @@ model{
 	sda ~ dunif(0, 50)
 	taur <- 1/(sdr^2)
 	sdr ~ dunif(0, 50)
+
 	
 	for(yr in 1:19){
 		sa_yr[yr] ~ dnorm(0, taua)T(-10, 10)

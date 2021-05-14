@@ -84,6 +84,7 @@ abund_MF <- kz %>%
                      mutate(
                      param="Abundance (MF)",
                      herd="Klinse-Za")%>%
+          mutate(totNMF=kz$mean$totNMF)%>%
   cbind(kz_yr_df)%>%
   rbind(
     qt %>%
@@ -92,6 +93,7 @@ abund_MF <- kz %>%
                      mutate(
                      param="Abundance (MF)",
                      herd="Quintette")%>%
+                mutate(totNMF=qt$mean$totNMF)%>%
       cbind(qt_yr_df))%>%
   rename("lower" = ".lower",
          "upper" = ".upper",
@@ -104,6 +106,7 @@ lambda_F <- kz %>%
                      mutate(
                      param="Population growth (F)",
                      herd="Klinse-Za")%>%
+  mutate(lambda=kz$mean$lambda)%>%
   cbind(kz_yr_df)%>%
   rbind(
     qt %>%
@@ -112,6 +115,7 @@ lambda_F <- kz %>%
                      mutate(
                      param="Population growth (F)",
                      herd="Quintette")%>%
+        mutate(lambda=qt$mean$lambda)%>%
       cbind(qt_yr_df))%>%
   rename("lower" = ".lower",
          "upper" = ".upper",
@@ -120,6 +124,7 @@ lambda_F <- kz %>%
   mutate(est=case_when(yrs<=min(kz_yr_df$yrs) & herd=="Klinse-Za"~NA_real_, 
                        yrs<=min(qt_yr_df$yrs) & herd=="Quintette"~NA_real_, 
                                    TRUE~est))
+  
   
   
 
@@ -248,7 +253,8 @@ kz %>%
   spread_draws(R[i,j]) %>%
   median_qi(.width = cri)%>%
   filter(j==2)%>%
-  mutate(
+  ungroup%>%
+  mutate(R=kz$mean$R[,2],
     param="Recruitment",
     pop="KZ-Wolf + Pen")%>%
   left_join(kz_yr_df%>%rename(i=yr_idx))%>%
@@ -259,7 +265,8 @@ kz %>%
   spread_draws(R[i,j]) %>%
   median_qi(.width = cri)%>%
   filter(j==1)%>%
-  mutate(
+    ungroup%>%
+  mutate(R=kz$mean$R[,1],
     param="Recruitment",
     pop="KZ-Wolf")%>%
   left_join(kz_yr_df%>%rename(i=yr_idx))%>%
@@ -269,7 +276,7 @@ kz %>%
 qt %>%
   spread_draws(R[i]) %>%
   median_qi(.width = cri)%>%
-  mutate(
+  mutate(R=qt$mean$R,
     param="Recruitment",
     pop="QT-Wolf")%>%
   left_join(qt_yr_df%>%rename(i=yr_idx))%>%
@@ -283,7 +290,8 @@ pop_df_s <- rbind(
   spread_draws(S[i,j]) %>%
   median_qi(.width = cri)%>%
   filter(j==2)%>%
-  mutate(
+        ungroup%>%
+  mutate(S=kz$mean$S[1:26,2],
     param="Survival",
     pop="KZ-Wolf + Pen")%>%
   left_join(kz_yr_df%>%rename(i=yr_idx))%>%
@@ -294,7 +302,8 @@ kz %>%
   spread_draws(S[i,j]) %>%
   median_qi(.width = cri)%>%
   filter(j==1)%>%
-  mutate(
+    ungroup%>%
+  mutate(S=kz$mean$S[,1],
     param="Survival",
     pop="KZ-Wolf")%>%
   left_join(kz_yr_df%>%rename(i=yr_idx))%>%
@@ -304,7 +313,7 @@ kz %>%
 qt %>%
   spread_draws(S[i]) %>%
   median_qi(.width = cri)%>%
-  mutate(
+  mutate(S=qt$mean$S,
     param="Survival",
     pop="QT-Wolf")%>%
   left_join(qt_yr_df%>%rename(i=yr_idx))%>%
@@ -676,6 +685,8 @@ rbind(
 
 write_csv(summary.effect,here::here("tables", "treatment_effect.csv"))
 kable(summary.effect)
+
+
 ```
 
 

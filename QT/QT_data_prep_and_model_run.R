@@ -1,4 +1,4 @@
-## ----render, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, results='hide'--------------------------------------------
+## ----render, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, results='hide'---------------------------------------------------
 ## rmarkdown::render(here::here("QT",'QT_data_prep_and_model_run.Rmd'),
 ##                   output_file = "README.md")
 ## 
@@ -6,7 +6,7 @@
 ##             output=here::here("QT",'QT_data_prep_and_model_run.R'))
 
 
-## ----Load packages and data, results='hide', message=FALSE, warning=FALSE-------------------------------------------------------
+## ----Load packages and data, results='hide', message=FALSE, warning=FALSE--------------------------------------------------------------
 library(ggmcmc)
 library(jagsUI)
 library(knitr)
@@ -46,7 +46,7 @@ count_dat[19,"SurveryCount_CALFMF"] <- NA
 sightability <- read.csv(here::here("data", "QT", "sightability_QT.csv"))
 
 
-## ----sight bootstrap, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, results='hide'-----------------------------------
+## ----sight bootstrap, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, results='hide'------------------------------------------
 ## 
 ## for(i in 1:nrow(sightability)){
 ##   if(!is.na(sightability[i,"seen"])){
@@ -78,9 +78,9 @@ sightability <- read.csv(here::here("data", "QT", "sightability_QT.csv"))
 ##   expand_limits(y=0)
 
 
-## ----Prep for IPM, results='hide', message=FALSE, warning=FALSE-----------------------------------------------------------------
+## ----Prep for IPM, results='hide', message=FALSE, warning=FALSE------------------------------------------------------------------------
 #  Years of study
-yrs <-  seq(from = 2001, to = 2020, by = 1)
+yrs <-  seq(from = 2001, to = 2021, by = 1)
 nyr <- length(yrs)
 yr_idx <- seq(from = 1, to = nyr, by = 1)
 yr_df <- as.data.frame(cbind(yrs, yr_idx))
@@ -97,7 +97,7 @@ adult_female_recruit <- adult_female_recruit%>%	mutate(
 
 meanr <- array(NA, c(3,1,2)) 
 meanr[3,1,1] <- mean(adult_female_recruit$Mean, na.rm = TRUE)
-meanr[3,1,2] <- 100
+meanr[3,1,2] <- 0.01
 
 
 # Survival - need estimates for both penned and control (not penned) population units
@@ -108,7 +108,7 @@ adult_female_survival_control <- adult_female_survival %>%
 	dplyr::filter(Pop == 1) 
 
 means[2:3,1,1] <- mean(adult_female_survival_control$Mean, na.rm = TRUE)
-means[2:3,1,2] <- 100
+means[2:3,1,2] <- 0.01
 
 
 # Starting population size of population unit (vector of values for each age class)
@@ -125,7 +125,6 @@ sdat <- adult_female_survival %>%
 		pop = Pop,
 		mu = ifelse(Mean!= 1, Mean, 0.99),
 		tau = 1/ (SD * SD)) %>%
-		#tau = 500) %>%
 	dplyr::filter(!is.na(mu)) %>%
 	left_join(yr_df, by = c("Year" = "yrs")) %>%
 	dplyr::select(dau, yr = yr_idx, age, pop, mu, tau)
@@ -140,7 +139,6 @@ rdat <- adult_female_recruit  %>%
 		pop = Pop,
 		mu = Mean,
 		tau = 1/ (SD * SD)) %>%
-		#tau = 0.1) %>%
 	dplyr::filter(!is.na(mu)) %>%
 	left_join(yr_df, by = c("Year" = "yrs")) %>%
 	dplyr::select(dau, yr = yr_idx, age, pop, mu, tau) 
@@ -193,7 +191,7 @@ calf_abundat <- count_dat %>%
 
 
 
-## ----Run model in JAGS, results='hide', message=FALSE, warning=FALSE------------------------------------------------------------
+## ----Run model in JAGS, results='hide', message=FALSE, warning=FALSE-------------------------------------------------------------------
 #  Gather data inputs in a list
 ipm_dat <- list(nyr = nyr,
 	nmin = nmin,
@@ -251,33 +249,11 @@ out_rnd_eff <- jagsUI::jags(ipm_dat,
 	n.thin = nt,
 	n.adapt = nad)
 
-###save output, using piggyback because too large for github, then delete file so it doesn't upload
-# ##need a github token
-# ##get yours here:
-# browse_github_pat()
-# github_token()
-# ##Add to your r environ 
-#  
-# ##bring up R envir using this command below
-# edit_r_environ()
-# 
-# #add this line
-# GITHUB_TOKEN="***ADD TOKEN HERE***"
-#
-#
-###OR for 1 time use add it here and run
-#Sys.setenv(GITHUB_TOKEN="***ADD TOKEN HERE***")
-
-save(out_rnd_eff, file = here::here("QT", "qt_out_rnd_eff.Rdata"))
-pb_upload(here::here("QT", "qt_out_rnd_eff.Rdata"), 
-          repo = "ctlamb/KZ_QT_IPM", 
-          tag = "v0.0.1",
-          overwrite=TRUE)
-unlink(here::here("QT", "qt_out_rnd_eff.Rdata"))
+save(out_rnd_eff, file = here::here("output", "qt_out_rnd_eff.Rdata"))
 
 
 
-## ----MODEL DIAGNOSTICS,eval=FALSE, results='hide', message=FALSE, warning=FALSE-------------------------------------------------
+## ----MODEL DIAGNOSTICS,eval=FALSE, results='hide', message=FALSE, warning=FALSE--------------------------------------------------------
 ## MCMCtrace(out_rnd_eff,
 ##         params = "totAdult",
 ##         ISB = FALSE,
@@ -303,7 +279,7 @@ unlink(here::here("QT", "qt_out_rnd_eff.Rdata"))
 ## 
 
 
-## ----Plot results-abundance, results='hide', message=FALSE, warning=FALSE-------------------------------------------------------
+## ----Plot results-abundance, results='hide', message=FALSE, warning=FALSE--------------------------------------------------------------
 res_df <- data.frame(rbind(yr_df,yr_df),
                      est=c(out_rnd_eff$mean$totN, out_rnd_eff$mean$lambda),
                      q2.5=c(out_rnd_eff$q2.5$totN, out_rnd_eff$q2.5$lambda),
@@ -348,7 +324,7 @@ res_df%>%rbind(data.frame(rbind(yr_df),
 #ggsave(here::here("plots", "abundance_MF.png"), width=5, height=8)
 
 
-## ----Plot results-vital rates, results='hide', message=FALSE, warning=FALSE-----------------------------------------------------
+## ----Plot results-vital rates, results='hide', message=FALSE, warning=FALSE------------------------------------------------------------
 #R
 pop_df_r <- data.frame(estimate=out_rnd_eff$mean$R,
                        lower=out_rnd_eff$q2.5$R,
@@ -397,7 +373,7 @@ ggplot(data=pop_df2%>%
 #ggsave(here::here("plots", "vital_rates.png"), width=8, height=5)
 
 
-## ----Plot results-vital rates vs raw data, results='hide', message=FALSE, warning=FALSE-----------------------------------------
+## ----Plot results-vital rates vs raw data, results='hide', message=FALSE, warning=FALSE------------------------------------------------
 calc.vr <- pop_df2%>%
          filter(yrs>2001)
 
@@ -436,7 +412,7 @@ ggplot(aes(x = yrs, y = estimate, fill=class,ymin=lower, ymax=upper)) +
 write_csv(raw.vr, here::here("data", "QT", "vitalrate_validation_QT.csv"))
 
 
-## ----Plot results-counts vs raw data, fig.height=6, fig.width=6, message=FALSE, warning=FALSE, results='hide'-------------------
+## ----Plot results-counts vs raw data, fig.height=6, fig.width=6, message=FALSE, warning=FALSE, results='hide'--------------------------
 
 calc.abund <- data.frame(rbind(yr_df),
                           est=c(out_rnd_eff$mean$totAdults),
@@ -474,7 +450,7 @@ ggplot(aes(x = yrs, y = est, fill=class)) +
 
 
 
-## ----Plot results-summarise vital rates, results='asis'-------------------------------------------------------------------------
+## ----Plot results-summarise vital rates, results='asis'--------------------------------------------------------------------------------
 summary.s <- tribble(
   ~pop,~s, ~s.lower, ~s.upper,
 "pre-mgmt",out_rnd_eff$mean$mean_surv_pre, out_rnd_eff$q2.5$mean_surv_pre,out_rnd_eff$q97.5$geom_mean_lambda_pre,
@@ -501,7 +477,7 @@ summary.vr <- summary.s%>%
   left_join(summary.r3)%>%
   mutate_if(is.numeric,function(x) round(x,2))
 
-summary.vr$Years <- c("2002-2015", "2016-2020")
+summary.vr$Years <- c("2002-2015", "2016-2021")
 
 summary.vr <- summary.vr%>%
   mutate(`s 95% CI`=paste(s.lower,s.upper, sep="-"),
@@ -515,7 +491,7 @@ gt(summary.vr)%>%
   ) 
 
 
-## ----Plot results-summarise growth rates, results='asis'------------------------------------------------------------------------
+## ----Plot results-summarise growth rates, results='asis'-------------------------------------------------------------------------------
 
 
 summary.l <- tribble(
@@ -526,7 +502,7 @@ summary.l <- tribble(
   mutate_if(is.numeric,function(x) round(x,2))
 
 
-summary.l$Years <- c("2002-2015", "2016-2020", "2017-2020")
+summary.l$Years <- c("2002-2015", "2016-2021", "2017-2021")
 colnames(summary.l) <- c("Group", "Lambda", "Lamba.Lower", "Lambda.Upper", "Years")
 
 summary.l <- summary.l%>%
@@ -539,7 +515,7 @@ gt(summary.l)%>%
   ) 
 
 
-## ----effects, results='asis'----------------------------------------------------------------------------------------------------
+## ----effects, results='asis'-----------------------------------------------------------------------------------------------------------
 
 summary.effect <- tribble(
   ~pop,~lambda.dif, ~lower, ~upper,
@@ -556,8 +532,8 @@ gt(summary.effect)%>%
 
 S <- ggs(out_rnd_eff$samples)%>%
   filter(Parameter%in%c("diff_geom_mean_lambda_post_to_pre","diff_geom_mean_lambda_post_to_pre_iwolf"))%>%
-  mutate(Parameter=case_when(Parameter%in%"diff_geom_mean_lambda_post_to_pre"~"All Wolf Control (2016-2020)",
-                             Parameter%in%"diff_geom_mean_lambda_post_to_pre_iwolf"~"Intense Wolf Control (2017-2020)"
+  mutate(Parameter=case_when(Parameter%in%"diff_geom_mean_lambda_post_to_pre"~"All Wolf Control (2016-2021)",
+                             Parameter%in%"diff_geom_mean_lambda_post_to_pre_iwolf"~"Intense Wolf Control (2017-2021)"
                              ))
 
 ggplot(S, aes(x = value,fill=Parameter)) +

@@ -1,7 +1,7 @@
 Klinse-Za Caribou IPM
 ================
 Sara Williams, Hans Martin, and Clayton Lamb
-23 November, 2020
+14 May, 2021
 
 \#\#Load Data
 
@@ -27,7 +27,7 @@ gm_mean = function(a){prod(a)^(1/length(a))}
 # Read in raw data
 adult_female_survival <- read.csv(here::here("data", "KZ", "adult_female_survival_KZ.csv"))
 adult_female_recruit <- read.csv(here::here("data", "KZ", "adult_female_recruit_KZ.csv"))
-adult_sex_ratio <- read.csv(here::here("data", "KZ", "adult_sexratio_KZ_withimm.csv"))
+
 
 # Mincounts and abundance estimates and SD's (both adult and calf), remove min counts <80% sightability
 count_dat <- read_xlsx(here::here("data", "KZ", "Count_summary_KZ.xlsx"))%>%
@@ -49,7 +49,7 @@ sightability <- read.csv(here::here("data", "KZ", "sightability_KZ.csv"))
 
 ``` r
 #  Years of study
-yrs <-  seq(from = 1995, to = 2020, by = 1)
+yrs <-  seq(from = 1995, to = 2021, by = 1)
 nyr <- length(yrs)
 yr_idx <- seq(from = 1, to = nyr, by = 1)
 yr_df <- as.data.frame(cbind(yrs, yr_idx))
@@ -68,7 +68,7 @@ sim_yrs2 <- yr_df %>%
 wolfpen_ind <- adult_female_pencount_in$Wolf_control_pen
 
 #  Create vectors of sex ratio
-adult_sex_ratio <- adult_sex_ratio$Mean
+adult_sex_ratio <- count_dat$SexRatio
 
 #  Create vectors of known numbers of adult females and calves going into and coming out  of pen
 nPen <- adult_female_pencount_in$Mean
@@ -81,7 +81,7 @@ adult_female_recruit <- adult_female_recruit %>%
 
 meanr <- array(NA, c(1,1,2)) 
 meanr[1,1,1] <- mean(adult_female_recruit$Mean, na.rm = TRUE)
-meanr[1,1,2] <- 100
+meanr[1,1,2] <- 0.01
 
 
 # Survival - need estimates for both penned and control (not penned) population units
@@ -90,12 +90,12 @@ means <- array(NA, c(1,2,2))
 adult_female_survival_control <- adult_female_survival %>%
     dplyr::filter(Pop == 1) 
 means[1,1,1] <- mean(adult_female_survival_control$Mean, na.rm = TRUE)
-means[1,1,2] <- 100
+means[1,1,2] <- 0.01
 
 adult_female_survival_pen <- adult_female_survival %>%
     dplyr::filter(Pop == 2) 
 means[1,2,1] <- mean(adult_female_survival_pen$Mean, na.rm = TRUE)
-means[1,2,2] <- 100
+means[1,2,2] <- 0.01
 
 
 # Starting population size of population unit (vector of values for each age class)
@@ -112,7 +112,6 @@ sdat <- adult_female_survival %>%
         pop = Pop,
         mu = ifelse(Mean!= 1, Mean, 0.99),
         tau = 1/ (SD * SD)) %>%
-        #tau = 500) %>%
     dplyr::filter(!is.na(mu)) %>%
     left_join(yr_df, by = c("Year" = "yrs")) %>%
     dplyr::select(dau, yr = yr_idx, age, pop, mu, tau)
@@ -127,7 +126,6 @@ rdat <- adult_female_recruit  %>%
         pop = Pop,
         mu = Mean,
         tau = 1/ (SD * SD)) %>%
-        #tau = 0.1) %>%
     dplyr::filter(!is.na(mu)) %>%
     left_join(yr_df, by = c("Year" = "yrs")) %>%
     dplyr::select(dau, yr = yr_idx, age, pop, mu, tau) 
@@ -245,7 +243,8 @@ model_parms <- c("lambda","lambdaC",
     "wolf_eff_proportion","pen_eff_proportion",
     "lambdaSimC", "lambdaSimC2","lambdaSimP",
     "wolf_eff","pen_eff", "wolf_eff_iwolf","pen_eff_iwolf","pen_eff_ipen", "wolf_eff_ipen",
-    "diff_geom_mean_lambda_post_to_pre_ipen", "geom_mean_lambda_postpen_iPen", "geom_mean_lambda_SimPen_iPen")
+    "diff_geom_mean_lambda_post_to_pre_ipen", "geom_mean_lambda_postpen_iPen", "geom_mean_lambda_SimPen_iPen",
+    "mean_surv_post_pooled","mean_r_post_pooled","mean_r3_post_pooled","penprop")
 
 
 #  Run model with survival and recruitment varying per year
@@ -259,31 +258,7 @@ out_rnd_eff <- jagsUI::jags(ipm_dat,
     n.thin = nt,
     n.adapt = nad)
 
-
-###save output, using piggyback because too large for github, then delete file so it doesn't upload
-# ##need a github token
-# ##get yours here:
-# browse_github_pat()
-# github_token()
-# ##Add to your r environ 
-#  
-# ##bring up R envir using this command below
-# edit_r_environ()
-# 
-# #add this line
-# GITHUB_TOKEN="***ADD TOKEN HERE***"
-#
-#
-###OR for 1 time use add it here and run
-#Sys.setenv(GITHUB_TOKEN="***ADD TOKEN HERE***")
-
-
-save(out_rnd_eff, file = here::here("KZ", "kz_out_rnd_eff.Rdata"))
-pb_upload(here::here("KZ", "kz_out_rnd_eff.Rdata"),
-          repo = "ctlamb/KZ_QT_IPM",
-          tag = "v0.0.1",
-          overwrite=TRUE)
-unlink(here::here("KZ", "kz_out_rnd_eff.Rdata"))
+save(out_rnd_eff, file = here::here("output", "kz_out_rnd_eff.Rdata"))
 ```
 
 \#\#MODEL DIAGNOSTICS
@@ -570,10 +545,37 @@ ggplot(aes(x = yrs, y = est, fill=class)) +
 ```
 
 ![](README_files/figure-gfm/Plot%20results-counts%20vs%20raw%20data-1.png)<!-- -->
+
+``` r
+raw.abund.f <-data.frame(param="F_Count",
+                                         est=count_dat$F_max/count_dat$Mean_Sightability,
+                                         q2.5=NA,
+                                         q97.5=NA,
+                                         yrs=yr_df$yrs,
+                                         yr_idx=NA)%>%
+  select(colnames(res_df))
+
+
+res_df%>%filter(param%in%"totN")%>%mutate(class="modelled")%>%
+  rbind(raw.abund.f%>%as.data.frame()%>%mutate(class="observed"))%>%
+  filter(param%in%c("totN", "F_Count"))%>%
+ggplot(aes(x = yrs, y = est, fill=class)) +
+  geom_cloud(aes( ymin=q2.5, ymax=q97.5),steps=20, max_alpha = 1,se_mult=1.96)+
+  geom_line(aes(color=class)) +
+  geom_point(aes(color=class)) +
+  theme_ipsum()+
+  theme_ipsum()+
+  labs(x="Year", y="Female Abundance", title="Comparing modelled vs observed population estimates")+
+    geom_vline(xintercept = 2013.5)+
+  geom_vline(xintercept = 2014.5,linetype="dashed")+
+  expand_limits(y=0)
+```
+
+![](README_files/figure-gfm/Plot%20results-counts%20vs%20raw%20data-2.png)<!-- -->
 \#\# POP SIMULATION–PARTITION EFFECTS OF PEN vs FREE
 
 ``` r
-pop.sim <-data.frame(yrs=rep(c(2014:2020), times=3),
+pop.sim <-data.frame(yrs=rep(c(2014:2021), times=3),
                      est=c(out_rnd_eff$mean$simTotC, out_rnd_eff$mean$simTotP, out_rnd_eff$mean$simTotBAU),
                      q2.5=c(out_rnd_eff$q2.5$simTotC, out_rnd_eff$q2.5$simTotP, out_rnd_eff$q2.5$simTotBAU),
                      q97.5=c(out_rnd_eff$q97.5$simTotC, out_rnd_eff$q97.5$simTotP, out_rnd_eff$q97.5$simTotBAU),
@@ -673,7 +675,7 @@ pop_age%>%
     geom_vline(xintercept = 2012.5)
 ```
 
-    ## `summarise()` regrouping output by 'year' (override with `.groups` argument)
+    ## `summarise()` has grouped output by 'year'. You can override using the `.groups` argument.
 
 ![](README_files/figure-gfm/Age%20structure-4.png)<!-- -->
 
@@ -693,7 +695,7 @@ summary.l <- tribble(
   mutate_if(is.numeric,function(x) round(x,2))
 
 
-summary.l$Years <- c("1996-2013", "2015-2020","2017-2020","2017-2020", "2017-2020", "2014-2020","2015-2020")
+summary.l$Years <- c("1996-2013", "2015-2021","2017-2021","2017-2021", "2017-2021", "2014-2021","2015-2021")
 colnames(summary.l) <- c("Group", "Lambda", "Lamba.Lower", "Lambda.Upper", "Years")
 
 
@@ -713,13 +715,15 @@ gt(summary.l)%>%
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#nkpxetjgkv .gt_table {
+#sflrijrnqd .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
   margin-right: auto;
   color: #333333;
   font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
   background-color: #FFFFFF;
   width: auto;
   border-top-style: solid;
@@ -736,7 +740,7 @@ gt(summary.l)%>%
   border-left-color: #D3D3D3;
 }
 
-#nkpxetjgkv .gt_heading {
+#sflrijrnqd .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -748,7 +752,7 @@ gt(summary.l)%>%
   border-right-color: #D3D3D3;
 }
 
-#nkpxetjgkv .gt_title {
+#sflrijrnqd .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -758,7 +762,7 @@ gt(summary.l)%>%
   border-bottom-width: 0;
 }
 
-#nkpxetjgkv .gt_subtitle {
+#sflrijrnqd .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -768,13 +772,13 @@ gt(summary.l)%>%
   border-top-width: 0;
 }
 
-#nkpxetjgkv .gt_bottom_border {
+#sflrijrnqd .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#nkpxetjgkv .gt_col_headings {
+#sflrijrnqd .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -789,7 +793,7 @@ gt(summary.l)%>%
   border-right-color: #D3D3D3;
 }
 
-#nkpxetjgkv .gt_col_heading {
+#sflrijrnqd .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -809,7 +813,7 @@ gt(summary.l)%>%
   overflow-x: hidden;
 }
 
-#nkpxetjgkv .gt_column_spanner_outer {
+#sflrijrnqd .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -821,15 +825,15 @@ gt(summary.l)%>%
   padding-right: 4px;
 }
 
-#nkpxetjgkv .gt_column_spanner_outer:first-child {
+#sflrijrnqd .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#nkpxetjgkv .gt_column_spanner_outer:last-child {
+#sflrijrnqd .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#nkpxetjgkv .gt_column_spanner {
+#sflrijrnqd .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -841,7 +845,7 @@ gt(summary.l)%>%
   width: 100%;
 }
 
-#nkpxetjgkv .gt_group_heading {
+#sflrijrnqd .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -863,7 +867,7 @@ gt(summary.l)%>%
   vertical-align: middle;
 }
 
-#nkpxetjgkv .gt_empty_group_heading {
+#sflrijrnqd .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -878,19 +882,15 @@ gt(summary.l)%>%
   vertical-align: middle;
 }
 
-#nkpxetjgkv .gt_striped {
-  background-color: rgba(128, 128, 128, 0.05);
-}
-
-#nkpxetjgkv .gt_from_md > :first-child {
+#sflrijrnqd .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#nkpxetjgkv .gt_from_md > :last-child {
+#sflrijrnqd .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#nkpxetjgkv .gt_row {
+#sflrijrnqd .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -909,7 +909,7 @@ gt(summary.l)%>%
   overflow-x: hidden;
 }
 
-#nkpxetjgkv .gt_stub {
+#sflrijrnqd .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -921,7 +921,7 @@ gt(summary.l)%>%
   padding-left: 12px;
 }
 
-#nkpxetjgkv .gt_summary_row {
+#sflrijrnqd .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -931,7 +931,7 @@ gt(summary.l)%>%
   padding-right: 5px;
 }
 
-#nkpxetjgkv .gt_first_summary_row {
+#sflrijrnqd .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -941,7 +941,7 @@ gt(summary.l)%>%
   border-top-color: #D3D3D3;
 }
 
-#nkpxetjgkv .gt_grand_summary_row {
+#sflrijrnqd .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -951,7 +951,7 @@ gt(summary.l)%>%
   padding-right: 5px;
 }
 
-#nkpxetjgkv .gt_first_grand_summary_row {
+#sflrijrnqd .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -961,7 +961,11 @@ gt(summary.l)%>%
   border-top-color: #D3D3D3;
 }
 
-#nkpxetjgkv .gt_table_body {
+#sflrijrnqd .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#sflrijrnqd .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -970,7 +974,7 @@ gt(summary.l)%>%
   border-bottom-color: #D3D3D3;
 }
 
-#nkpxetjgkv .gt_footnotes {
+#sflrijrnqd .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -984,13 +988,13 @@ gt(summary.l)%>%
   border-right-color: #D3D3D3;
 }
 
-#nkpxetjgkv .gt_footnote {
+#sflrijrnqd .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#nkpxetjgkv .gt_sourcenotes {
+#sflrijrnqd .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1004,47 +1008,47 @@ gt(summary.l)%>%
   border-right-color: #D3D3D3;
 }
 
-#nkpxetjgkv .gt_sourcenote {
+#sflrijrnqd .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#nkpxetjgkv .gt_left {
+#sflrijrnqd .gt_left {
   text-align: left;
 }
 
-#nkpxetjgkv .gt_center {
+#sflrijrnqd .gt_center {
   text-align: center;
 }
 
-#nkpxetjgkv .gt_right {
+#sflrijrnqd .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#nkpxetjgkv .gt_font_normal {
+#sflrijrnqd .gt_font_normal {
   font-weight: normal;
 }
 
-#nkpxetjgkv .gt_font_bold {
+#sflrijrnqd .gt_font_bold {
   font-weight: bold;
 }
 
-#nkpxetjgkv .gt_font_italic {
+#sflrijrnqd .gt_font_italic {
   font-style: italic;
 }
 
-#nkpxetjgkv .gt_super {
+#sflrijrnqd .gt_super {
   font-size: 65%;
 }
 
-#nkpxetjgkv .gt_footnote_marks {
+#sflrijrnqd .gt_footnote_marks {
   font-style: italic;
   font-size: 65%;
 }
 </style>
 
-<div id="nkpxetjgkv" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<div id="sflrijrnqd" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 
 <table class="gt_table">
 
@@ -1142,7 +1146,7 @@ post-mgmt
 
 <td class="gt_row gt_left">
 
-2015-2020
+2015-2021
 
 </td>
 
@@ -1154,7 +1158,7 @@ post-mgmt
 
 <td class="gt_row gt_left">
 
-1.04-1.09
+1.05-1.09
 
 </td>
 
@@ -1170,19 +1174,19 @@ post-mgmt\_intensewolf
 
 <td class="gt_row gt_left">
 
-2017-2020
+2017-2021
 
 </td>
 
 <td class="gt_row gt_right">
 
-1.05
+1.06
 
 </td>
 
 <td class="gt_row gt_left">
 
-1.01-1.08
+1.03-1.09
 
 </td>
 
@@ -1198,19 +1202,19 @@ Free\_intensewolf
 
 <td class="gt_row gt_left">
 
-2017-2020
+2017-2021
 
 </td>
 
 <td class="gt_row gt_right">
 
-0.93
+0.99
 
 </td>
 
 <td class="gt_row gt_left">
 
-0.84-1.02
+0.9-1.07
 
 </td>
 
@@ -1226,19 +1230,19 @@ Pen\_intensewolf
 
 <td class="gt_row gt_left">
 
-2017-2020
+2017-2021
 
 </td>
 
 <td class="gt_row gt_right">
 
-1.13
+1.11
 
 </td>
 
 <td class="gt_row gt_left">
 
-1.13-1.14
+1.11-1.11
 
 </td>
 
@@ -1254,19 +1258,19 @@ Free
 
 <td class="gt_row gt_left">
 
-2014-2020
+2014-2021
 
 </td>
 
 <td class="gt_row gt_right">
 
-0.97
+1.02
 
 </td>
 
 <td class="gt_row gt_left">
 
-0.91-1.03
+0.95-1.08
 
 </td>
 
@@ -1282,19 +1286,19 @@ Pen
 
 <td class="gt_row gt_left">
 
-2015-2020
+2015-2021
 
 </td>
 
 <td class="gt_row gt_right">
 
-1.10
+1.09
 
 </td>
 
 <td class="gt_row gt_left">
 
-1.09-1.1
+1.08-1.09
 
 </td>
 
@@ -1327,19 +1331,22 @@ summary.s <- tribble(
   ~pop,~s, ~s.lower, ~s.upper,
 "pre-mgmt",out_rnd_eff$mean$mean_surv_pre, out_rnd_eff$q2.5$mean_surv_pre,out_rnd_eff$q97.5$geom_mean_lambda_pre,
 "pen", out_rnd_eff$mean$mean_surv_pen, out_rnd_eff$q2.5$mean_surv_pen, out_rnd_eff$q97.5$mean_surv_pen,
-"wolf", out_rnd_eff$mean$mean_surv_wolf, out_rnd_eff$q2.5$mean_surv_wolf, out_rnd_eff$q97.5$mean_surv_wolf)
+"wolf", out_rnd_eff$mean$mean_surv_wolf, out_rnd_eff$q2.5$mean_surv_wolf, out_rnd_eff$q97.5$mean_surv_wolf,
+"post-pooled", out_rnd_eff$mean$mean_surv_post_pooled, out_rnd_eff$q2.5$mean_surv_post_pooled, out_rnd_eff$q97.5$mean_surv_post_pooled)
 
 summary.r <- tribble(
   ~pop,~r, ~r.lower, ~r.upper,
 "pre-mgmt",out_rnd_eff$mean$mean_r_pre, out_rnd_eff$q2.5$mean_r_pre, out_rnd_eff$q97.5$mean_r_pre,
 "pen", out_rnd_eff$mean$mean_r_pen, out_rnd_eff$q2.5$mean_r_pen, out_rnd_eff$q97.5$mean_r_pen,
-"wolf", out_rnd_eff$mean$mean_r_wolf, out_rnd_eff$q2.5$mean_r_wolf, out_rnd_eff$q97.5$mean_r_wolf)
+"wolf", out_rnd_eff$mean$mean_r_wolf, out_rnd_eff$q2.5$mean_r_wolf, out_rnd_eff$q97.5$mean_r_wolf,
+"post-pooled", out_rnd_eff$mean$mean_r_post_pooled, out_rnd_eff$q2.5$mean_r_post_pooled, out_rnd_eff$q97.5$mean_r_post_pooled)
 
 summary.r3 <- tribble(
   ~pop,~r.ad, ~r.ad.lower, ~r.ad.upper,
 "pre-mgmt", out_rnd_eff$mean$mean_r3_pre, out_rnd_eff$q2.5$mean_r3_pre, out_rnd_eff$q97.5$mean_r3_pre,
 "pen", out_rnd_eff$mean$mean_r3_pen, out_rnd_eff$q2.5$mean_r3_pen, out_rnd_eff$q97.5$mean_r3_pen,
-"wolf", out_rnd_eff$mean$mean_r3_wolf, out_rnd_eff$q2.5$mean_r3_wolf, out_rnd_eff$q97.5$mean_r3_wolf)
+"wolf", out_rnd_eff$mean$mean_r3_wolf, out_rnd_eff$q2.5$mean_r3_wolf, out_rnd_eff$q97.5$mean_r3_wolf,
+"post-pooled", out_rnd_eff$mean$mean_r3_post_pooled, out_rnd_eff$q2.5$mean_r3_post_pooled, out_rnd_eff$q97.5$mean_r3_post_pooled)
 
 
 summary.vr <- summary.s%>%
@@ -1352,7 +1359,7 @@ summary.vr <- summary.s%>%
     ## Joining, by = "pop"
 
 ``` r
-summary.vr$Years <- c("1996-2013", "2015-2020", "2014-2020")
+summary.vr$Years <- c("1996-2013", "2014-2020", "2013-2020", "2014-2020")
 
 summary.vr <- summary.vr%>%
   mutate(`s 95% CI`=paste(s.lower,s.upper, sep="-"),
@@ -1377,13 +1384,15 @@ gt(summary.vr)%>%
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#elybouqkxh .gt_table {
+#tcimrdlvtn .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
   margin-right: auto;
   color: #333333;
   font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
   background-color: #FFFFFF;
   width: auto;
   border-top-style: solid;
@@ -1400,7 +1409,7 @@ gt(summary.vr)%>%
   border-left-color: #D3D3D3;
 }
 
-#elybouqkxh .gt_heading {
+#tcimrdlvtn .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -1412,7 +1421,7 @@ gt(summary.vr)%>%
   border-right-color: #D3D3D3;
 }
 
-#elybouqkxh .gt_title {
+#tcimrdlvtn .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -1422,7 +1431,7 @@ gt(summary.vr)%>%
   border-bottom-width: 0;
 }
 
-#elybouqkxh .gt_subtitle {
+#tcimrdlvtn .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -1432,13 +1441,13 @@ gt(summary.vr)%>%
   border-top-width: 0;
 }
 
-#elybouqkxh .gt_bottom_border {
+#tcimrdlvtn .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#elybouqkxh .gt_col_headings {
+#tcimrdlvtn .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1453,7 +1462,7 @@ gt(summary.vr)%>%
   border-right-color: #D3D3D3;
 }
 
-#elybouqkxh .gt_col_heading {
+#tcimrdlvtn .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1473,7 +1482,7 @@ gt(summary.vr)%>%
   overflow-x: hidden;
 }
 
-#elybouqkxh .gt_column_spanner_outer {
+#tcimrdlvtn .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1485,15 +1494,15 @@ gt(summary.vr)%>%
   padding-right: 4px;
 }
 
-#elybouqkxh .gt_column_spanner_outer:first-child {
+#tcimrdlvtn .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#elybouqkxh .gt_column_spanner_outer:last-child {
+#tcimrdlvtn .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#elybouqkxh .gt_column_spanner {
+#tcimrdlvtn .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -1505,7 +1514,7 @@ gt(summary.vr)%>%
   width: 100%;
 }
 
-#elybouqkxh .gt_group_heading {
+#tcimrdlvtn .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -1527,7 +1536,7 @@ gt(summary.vr)%>%
   vertical-align: middle;
 }
 
-#elybouqkxh .gt_empty_group_heading {
+#tcimrdlvtn .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -1542,19 +1551,15 @@ gt(summary.vr)%>%
   vertical-align: middle;
 }
 
-#elybouqkxh .gt_striped {
-  background-color: rgba(128, 128, 128, 0.05);
-}
-
-#elybouqkxh .gt_from_md > :first-child {
+#tcimrdlvtn .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#elybouqkxh .gt_from_md > :last-child {
+#tcimrdlvtn .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#elybouqkxh .gt_row {
+#tcimrdlvtn .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1573,7 +1578,7 @@ gt(summary.vr)%>%
   overflow-x: hidden;
 }
 
-#elybouqkxh .gt_stub {
+#tcimrdlvtn .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1585,7 +1590,7 @@ gt(summary.vr)%>%
   padding-left: 12px;
 }
 
-#elybouqkxh .gt_summary_row {
+#tcimrdlvtn .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1595,7 +1600,7 @@ gt(summary.vr)%>%
   padding-right: 5px;
 }
 
-#elybouqkxh .gt_first_summary_row {
+#tcimrdlvtn .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1605,7 +1610,7 @@ gt(summary.vr)%>%
   border-top-color: #D3D3D3;
 }
 
-#elybouqkxh .gt_grand_summary_row {
+#tcimrdlvtn .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1615,7 +1620,7 @@ gt(summary.vr)%>%
   padding-right: 5px;
 }
 
-#elybouqkxh .gt_first_grand_summary_row {
+#tcimrdlvtn .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1625,7 +1630,11 @@ gt(summary.vr)%>%
   border-top-color: #D3D3D3;
 }
 
-#elybouqkxh .gt_table_body {
+#tcimrdlvtn .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#tcimrdlvtn .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1634,7 +1643,7 @@ gt(summary.vr)%>%
   border-bottom-color: #D3D3D3;
 }
 
-#elybouqkxh .gt_footnotes {
+#tcimrdlvtn .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1648,13 +1657,13 @@ gt(summary.vr)%>%
   border-right-color: #D3D3D3;
 }
 
-#elybouqkxh .gt_footnote {
+#tcimrdlvtn .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#elybouqkxh .gt_sourcenotes {
+#tcimrdlvtn .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1668,47 +1677,47 @@ gt(summary.vr)%>%
   border-right-color: #D3D3D3;
 }
 
-#elybouqkxh .gt_sourcenote {
+#tcimrdlvtn .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#elybouqkxh .gt_left {
+#tcimrdlvtn .gt_left {
   text-align: left;
 }
 
-#elybouqkxh .gt_center {
+#tcimrdlvtn .gt_center {
   text-align: center;
 }
 
-#elybouqkxh .gt_right {
+#tcimrdlvtn .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#elybouqkxh .gt_font_normal {
+#tcimrdlvtn .gt_font_normal {
   font-weight: normal;
 }
 
-#elybouqkxh .gt_font_bold {
+#tcimrdlvtn .gt_font_bold {
   font-weight: bold;
 }
 
-#elybouqkxh .gt_font_italic {
+#tcimrdlvtn .gt_font_italic {
   font-style: italic;
 }
 
-#elybouqkxh .gt_super {
+#tcimrdlvtn .gt_super {
   font-size: 65%;
 }
 
-#elybouqkxh .gt_footnote_marks {
+#tcimrdlvtn .gt_footnote_marks {
   font-style: italic;
   font-size: 65%;
 }
 </style>
 
-<div id="elybouqkxh" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<div id="tcimrdlvtn" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 
 <table class="gt_table">
 
@@ -1808,37 +1817,37 @@ pre-mgmt
 
 <td class="gt_row gt_right">
 
-0.80
+0.79
 
 </td>
 
 <td class="gt_row gt_left">
 
-0.77-0.9
+0.76-0.9
 
 </td>
 
 <td class="gt_row gt_right">
 
-0.12
+0.13
 
 </td>
 
 <td class="gt_row gt_left">
 
-0.1-0.13
+0.1-0.15
 
 </td>
 
 <td class="gt_row gt_right">
 
-0.15
+0.16
 
 </td>
 
 <td class="gt_row gt_left">
 
-0.12-0.18
+0.12-0.21
 
 </td>
 
@@ -1854,19 +1863,19 @@ pen
 
 <td class="gt_row gt_left">
 
-2015-2020
+2014-2020
 
 </td>
 
 <td class="gt_row gt_right">
 
-0.91
+0.90
 
 </td>
 
 <td class="gt_row gt_left">
 
-0.91-0.91
+0.9-0.9
 
 </td>
 
@@ -1884,13 +1893,13 @@ pen
 
 <td class="gt_row gt_right">
 
-0.29
+0.30
 
 </td>
 
 <td class="gt_row gt_left">
 
-0.29-0.29
+0.3-0.3
 
 </td>
 
@@ -1906,31 +1915,31 @@ wolf
 
 <td class="gt_row gt_left">
 
-2014-2020
+2013-2020
 
 </td>
 
 <td class="gt_row gt_right">
 
-0.84
+0.89
 
 </td>
 
 <td class="gt_row gt_left">
 
-0.79-0.91
+0.82-0.95
 
 </td>
 
 <td class="gt_row gt_right">
 
-0.12
+0.13
 
 </td>
 
 <td class="gt_row gt_left">
 
-0.1-0.14
+0.11-0.15
 
 </td>
 
@@ -1942,7 +1951,59 @@ wolf
 
 <td class="gt_row gt_left">
 
-0.16-0.26
+0.15-0.26
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left">
+
+post-pooled
+
+</td>
+
+<td class="gt_row gt_left">
+
+2014-2020
+
+</td>
+
+<td class="gt_row gt_right">
+
+0.89
+
+</td>
+
+<td class="gt_row gt_left">
+
+0.85-0.93
+
+</td>
+
+<td class="gt_row gt_right">
+
+0.20
+
+</td>
+
+<td class="gt_row gt_left">
+
+0.19-0.21
+
+</td>
+
+<td class="gt_row gt_right">
+
+0.25
+
+</td>
+
+<td class="gt_row gt_left">
+
+0.22-0.28
 
 </td>
 
@@ -1979,13 +2040,15 @@ gt(summary.effect)%>%
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#czyesxnurh .gt_table {
+#aetbdfrrzc .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
   margin-right: auto;
   color: #333333;
   font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
   background-color: #FFFFFF;
   width: auto;
   border-top-style: solid;
@@ -2002,7 +2065,7 @@ gt(summary.effect)%>%
   border-left-color: #D3D3D3;
 }
 
-#czyesxnurh .gt_heading {
+#aetbdfrrzc .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -2014,7 +2077,7 @@ gt(summary.effect)%>%
   border-right-color: #D3D3D3;
 }
 
-#czyesxnurh .gt_title {
+#aetbdfrrzc .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -2024,7 +2087,7 @@ gt(summary.effect)%>%
   border-bottom-width: 0;
 }
 
-#czyesxnurh .gt_subtitle {
+#aetbdfrrzc .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -2034,13 +2097,13 @@ gt(summary.effect)%>%
   border-top-width: 0;
 }
 
-#czyesxnurh .gt_bottom_border {
+#aetbdfrrzc .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#czyesxnurh .gt_col_headings {
+#aetbdfrrzc .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -2055,7 +2118,7 @@ gt(summary.effect)%>%
   border-right-color: #D3D3D3;
 }
 
-#czyesxnurh .gt_col_heading {
+#aetbdfrrzc .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -2075,7 +2138,7 @@ gt(summary.effect)%>%
   overflow-x: hidden;
 }
 
-#czyesxnurh .gt_column_spanner_outer {
+#aetbdfrrzc .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -2087,15 +2150,15 @@ gt(summary.effect)%>%
   padding-right: 4px;
 }
 
-#czyesxnurh .gt_column_spanner_outer:first-child {
+#aetbdfrrzc .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#czyesxnurh .gt_column_spanner_outer:last-child {
+#aetbdfrrzc .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#czyesxnurh .gt_column_spanner {
+#aetbdfrrzc .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -2107,7 +2170,7 @@ gt(summary.effect)%>%
   width: 100%;
 }
 
-#czyesxnurh .gt_group_heading {
+#aetbdfrrzc .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -2129,7 +2192,7 @@ gt(summary.effect)%>%
   vertical-align: middle;
 }
 
-#czyesxnurh .gt_empty_group_heading {
+#aetbdfrrzc .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -2144,19 +2207,15 @@ gt(summary.effect)%>%
   vertical-align: middle;
 }
 
-#czyesxnurh .gt_striped {
-  background-color: rgba(128, 128, 128, 0.05);
-}
-
-#czyesxnurh .gt_from_md > :first-child {
+#aetbdfrrzc .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#czyesxnurh .gt_from_md > :last-child {
+#aetbdfrrzc .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#czyesxnurh .gt_row {
+#aetbdfrrzc .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2175,7 +2234,7 @@ gt(summary.effect)%>%
   overflow-x: hidden;
 }
 
-#czyesxnurh .gt_stub {
+#aetbdfrrzc .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -2187,7 +2246,7 @@ gt(summary.effect)%>%
   padding-left: 12px;
 }
 
-#czyesxnurh .gt_summary_row {
+#aetbdfrrzc .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -2197,7 +2256,7 @@ gt(summary.effect)%>%
   padding-right: 5px;
 }
 
-#czyesxnurh .gt_first_summary_row {
+#aetbdfrrzc .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2207,7 +2266,7 @@ gt(summary.effect)%>%
   border-top-color: #D3D3D3;
 }
 
-#czyesxnurh .gt_grand_summary_row {
+#aetbdfrrzc .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -2217,7 +2276,7 @@ gt(summary.effect)%>%
   padding-right: 5px;
 }
 
-#czyesxnurh .gt_first_grand_summary_row {
+#aetbdfrrzc .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2227,7 +2286,11 @@ gt(summary.effect)%>%
   border-top-color: #D3D3D3;
 }
 
-#czyesxnurh .gt_table_body {
+#aetbdfrrzc .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#aetbdfrrzc .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -2236,7 +2299,7 @@ gt(summary.effect)%>%
   border-bottom-color: #D3D3D3;
 }
 
-#czyesxnurh .gt_footnotes {
+#aetbdfrrzc .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -2250,13 +2313,13 @@ gt(summary.effect)%>%
   border-right-color: #D3D3D3;
 }
 
-#czyesxnurh .gt_footnote {
+#aetbdfrrzc .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#czyesxnurh .gt_sourcenotes {
+#aetbdfrrzc .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -2270,47 +2333,47 @@ gt(summary.effect)%>%
   border-right-color: #D3D3D3;
 }
 
-#czyesxnurh .gt_sourcenote {
+#aetbdfrrzc .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#czyesxnurh .gt_left {
+#aetbdfrrzc .gt_left {
   text-align: left;
 }
 
-#czyesxnurh .gt_center {
+#aetbdfrrzc .gt_center {
   text-align: center;
 }
 
-#czyesxnurh .gt_right {
+#aetbdfrrzc .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#czyesxnurh .gt_font_normal {
+#aetbdfrrzc .gt_font_normal {
   font-weight: normal;
 }
 
-#czyesxnurh .gt_font_bold {
+#aetbdfrrzc .gt_font_bold {
   font-weight: bold;
 }
 
-#czyesxnurh .gt_font_italic {
+#aetbdfrrzc .gt_font_italic {
   font-style: italic;
 }
 
-#czyesxnurh .gt_super {
+#aetbdfrrzc .gt_super {
   font-size: 65%;
 }
 
-#czyesxnurh .gt_footnote_marks {
+#aetbdfrrzc .gt_footnote_marks {
   font-style: italic;
   font-size: 65%;
 }
 </style>
 
-<div id="czyesxnurh" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<div id="aetbdfrrzc" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 
 <table class="gt_table">
 
@@ -2380,13 +2443,13 @@ pre vs post
 
 <td class="gt_row gt_right">
 
-0.18
+0.19
 
 </td>
 
 <td class="gt_row gt_right">
 
-0.15
+0.16
 
 </td>
 
@@ -2408,19 +2471,19 @@ pre vs post\_iwolf
 
 <td class="gt_row gt_right">
 
-0.16
+0.17
 
 </td>
 
 <td class="gt_row gt_right">
 
-0.12
+0.14
 
 </td>
 
 <td class="gt_row gt_right">
 
-0.19
+0.20
 
 </td>
 
