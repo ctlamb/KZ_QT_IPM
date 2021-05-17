@@ -56,7 +56,7 @@ qt_yr_df <- as.data.frame(cbind(yrs, yr_idx))
 
 
 ##counts
-qt_count_dat <- read_xlsx(here::here("data", "QT", "Count_summary_QT.xlsx"))
+qt_count_dat <- read_xlsx(here::here("data", "QT", "Count_summary_QT_HEWR.xlsx"))
 kz_count_dat <- read_xlsx(here::here("data", "KZ", "Count_summary_KZ.xlsx"))
 
 ##raw vital rates
@@ -695,7 +695,7 @@ kable(summary.l)
 | :-------- | :-------- | :-------- | -----: | :-------- |
 | Klinse-Za | post-mgmt | 2014-2021 |   1.08 | 1.06-1.09 |
 | Klinse-Za | pre-mgmt  | 1996-2013 |   0.89 | 0.88-0.9  |
-| Quintette | post-mgmt | 2016-2021 |   1.05 | 0.99-1.11 |
+| Quintette | post-mgmt | 2016-2021 |   1.05 | 0.99-1.1  |
 | Quintette | pre-mgmt  | 2002-2015 |   0.93 | 0.9-0.96  |
 
 ## Summarize effect of treatments
@@ -728,7 +728,7 @@ kable(summary.effect)
 | Klinse-Za | wolf + pen |             0.186 | 0.167 | 0.206 |
 | Klinse-Za | pen        |             0.056 | 0.006 | 0.115 |
 | Klinse-Za | wolf       |             0.130 | 0.067 | 0.186 |
-| Quintette | wolf       |             0.122 | 0.048 | 0.192 |
+| Quintette | wolf       |             0.114 | 0.038 | 0.188 |
 
 ## Summarize vital rates
 
@@ -833,8 +833,8 @@ kable(summary.vr)
 | Klinse-Za | post-mgmt (wolf)     | 2013-2021 |        0.89 | 0.83-0.94 |        0.12 | 0.11-0.14 |                   0.20 | 0.15-0.24    |
 | Klinse-Za | post-mgmt (wolf+pen) | 2014-2021 |        0.90 | 0.9-0.9   |        0.28 | 0.28-0.28 |                   0.30 | 0.3-0.3      |
 | Klinse-Za | pre-mgmt             | 1995-2012 |        0.79 | 0.77-0.82 |        0.12 | 0.11-0.14 |                   0.15 | 0.12-0.19    |
-| Quintette | post-mgmt            | 2016-2021 |        0.87 | 0.83-0.91 |        0.18 | 0.16-0.21 |                   0.29 | 0.24-0.36    |
-| Quintette | pre-mgmt             | 2002-2015 |        0.84 | 0.82-0.87 |        0.13 | 0.12-0.15 |                   0.19 | 0.14-0.57    |
+| Quintette | post-mgmt            | 2016-2021 |        0.87 | 0.83-0.91 |        0.18 | 0.16-0.21 |                   0.30 | 0.24-0.36    |
+| Quintette | pre-mgmt             | 2002-2015 |        0.84 | 0.81-0.87 |        0.13 | 0.12-0.15 |                   0.16 | 0.13-0.22    |
 
 ``` r
 # summary.vr%>%
@@ -858,7 +858,7 @@ kable(
 | :-------- | :-------- | -----: |
 | Klinse-Za | 2014-2021 |   1.13 |
 | Quintette | 2016-2021 |   1.05 |
-| Quintette | 2017-2021 |   1.10 |
+| Quintette | 2017-2021 |   1.11 |
 
 ## What proportion of non-calf females penned/yr
 
@@ -1022,7 +1022,7 @@ kable(summary.effect.refined)
 | Klinse-Za | refined wolf + refined pen |             0.168 | 0.144 | 0.192 |
 | Klinse-Za | refined pen                |             0.062 | 0.004 | 0.125 |
 | Klinse-Za | refined wolf               |             0.098 | 0.020 | 0.172 |
-| Quintette | Refined wolf               |             0.172 | 0.115 | 0.227 |
+| Quintette | Refined wolf               |             0.179 | 0.137 | 0.224 |
 
 ## Summarize refined period population growth
 
@@ -1070,5 +1070,5 @@ kable(summary.l.refined)
 | Klinse-Za | post-mgmt (refined wolf)               | 2017-2021 |   0.99 | 0.91-1.06 |
 | Klinse-Za | post-mgmt (wolf + refined pen)         | 2016-2021 |   1.07 | 1.05-1.09 |
 | Klinse-Za | pre-mgmt                               | 1996-2013 |   0.89 | 0.88-0.9  |
-| Quintette | post-mgmt (refined wolf)               | 2017-2021 |   1.10 | 1.05-1.15 |
+| Quintette | post-mgmt (refined wolf)               | 2017-2021 |   1.11 | 1.08-1.14 |
 | Quintette | pre-mgmt                               | 2002-2015 |   0.93 | 0.9-0.96  |

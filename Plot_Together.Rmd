@@ -63,7 +63,7 @@ qt_yr_df <- as.data.frame(cbind(yrs, yr_idx))
 
 
 ##counts
-qt_count_dat <- read_xlsx(here::here("data", "QT", "Count_summary_QT.xlsx"))
+qt_count_dat <- read_xlsx(here::here("data", "QT", "Count_summary_QT_HEWR.xlsx"))
 kz_count_dat <- read_xlsx(here::here("data", "KZ", "Count_summary_KZ.xlsx"))
 
 ##raw vital rates
