@@ -165,7 +165,7 @@ model{
 	 mean_r_pre <- mean(R[2:15])
 	 mean_r_post <- mean(R[16:21])
 
-	 mean_r3_pre <- mean(R.ad[2:15])
+	 mean_r3_pre <- mean(R.ad[3:15])
 	 mean_r3_post <- mean(R.ad[16:21])
 
 
