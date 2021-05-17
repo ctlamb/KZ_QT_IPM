@@ -1,7 +1,7 @@
 KZ and QT IPM results
 ================
 Sara Williams, Hans Martin, and Clayton Lamb
-14 May, 2021
+17 May, 2021
 
 # See folders KZ and QT for the IPM’s for each herd
 
@@ -70,6 +70,12 @@ cri<-0.9
 ## ABUNDANCE
 
 ``` r
+###TREATMENTS
+##lambda=n/n-1 so it is growth over the previous year
+##QT wolf reductions started winter 2014/2015 so year 2015. But didnt get many wolves until 2015/2016, so year 2016. A lag expected in lambda so summarized as treatment year +1
+##KZ wolf reductions started winter 2012/2013 so year 2013. Gov got involved 2014/2015, so year 2015, and then refined 2015/2016, so year 2016.
+##KZ pen started winter 2013/2014 so year 2014. 1 year delay expected as recruited calves are counted the following March,
+
 abund_MF <- kz %>%
           spread_draws(totNMF[i]) %>%
           median_qi(.width = cri)%>%
@@ -141,11 +147,11 @@ ggplot(rbind(abund_MF,lambda_F),aes(x = yrs, y = est, ymin=lower, ymax=upper, fi
         legend.title=element_text(size=15))+
     geom_vline(data=data.frame(herd=unique(abund_MF$herd),
                                param=rep(unique(rbind(abund_MF,lambda_F)$param),each=2),
-                               year=rep(c(2012.5,2015.5)),times=2),
+                               year=rep(c(2013.5,2015.5)),times=2), ##years used are treatment + 0.5 year when effects expected following census
                aes(xintercept = year),linetype="dashed")+
       geom_vline(data=data.frame(herd=unique(abund_MF$herd),
                                param=rep(unique(rbind(abund_MF,lambda_F)$param),each=2),
-                               year=rep(c(2013.5,NA)),times=2),
+                               year=rep(c(2014.5,NA)),times=2), ##years used are treatment + 0.5 year when effects expected following census
                aes(xintercept = year),linetype="solid")
 ```
 
@@ -673,7 +679,7 @@ rbind(
   select(pop,period,"lambda"=".value","lower"=".lower","upper"=".upper")%>%
   arrange(pop,period)
   
-summary.l$Years <- c("2014-2021", "1996-2012", "2016-2021", "2002-2015")
+summary.l$Years <- c("2014-2021", "1996-2013", "2016-2021", "2002-2015")
 colnames(summary.l) <- c("Herd", "Period", "Lambda", "Lamba.Lower", "Lambda.Upper", "Years")
 
 
@@ -688,9 +694,9 @@ kable(summary.l)
 | Herd      | Period    | Years     | Lambda | 90% CrI   |
 | :-------- | :-------- | :-------- | -----: | :-------- |
 | Klinse-Za | post-mgmt | 2014-2021 |   1.08 | 1.06-1.09 |
-| Klinse-Za | pre-mgmt  | 1996-2012 |   0.89 | 0.88-0.9  |
-| Quintette | post-mgmt | 2016-2021 |   1.07 | 1.02-1.13 |
-| Quintette | pre-mgmt  | 2002-2015 |   0.94 | 0.91-0.97 |
+| Klinse-Za | pre-mgmt  | 1996-2013 |   0.89 | 0.88-0.9  |
+| Quintette | post-mgmt | 2016-2021 |   1.05 | 0.99-1.11 |
+| Quintette | pre-mgmt  | 2002-2015 |   0.93 | 0.9-0.96  |
 
 ## Summarize effect of treatments
 
@@ -722,7 +728,7 @@ kable(summary.effect)
 | Klinse-Za | wolf + pen |             0.186 | 0.167 | 0.206 |
 | Klinse-Za | pen        |             0.056 | 0.006 | 0.115 |
 | Klinse-Za | wolf       |             0.130 | 0.067 | 0.186 |
-| Quintette | wolf       |             0.135 | 0.054 | 0.210 |
+| Quintette | wolf       |             0.122 | 0.048 | 0.192 |
 
 ## Summarize vital rates
 
@@ -827,8 +833,8 @@ kable(summary.vr)
 | Klinse-Za | post-mgmt (wolf)     | 2013-2021 |        0.89 | 0.83-0.94 |        0.12 | 0.11-0.14 |                   0.20 | 0.15-0.24    |
 | Klinse-Za | post-mgmt (wolf+pen) | 2014-2021 |        0.90 | 0.9-0.9   |        0.28 | 0.28-0.28 |                   0.30 | 0.3-0.3      |
 | Klinse-Za | pre-mgmt             | 1995-2012 |        0.79 | 0.77-0.82 |        0.12 | 0.11-0.14 |                   0.15 | 0.12-0.19    |
-| Quintette | post-mgmt            | 2016-2021 |        0.88 | 0.84-0.92 |        0.19 | 0.16-0.21 |                   0.32 | 0.26-0.39    |
-| Quintette | pre-mgmt             | 2002-2015 |        0.85 | 0.82-0.88 |        0.13 | 0.12-0.15 |                   0.19 | 0.14-0.6     |
+| Quintette | post-mgmt            | 2016-2021 |        0.87 | 0.83-0.91 |        0.18 | 0.16-0.21 |                   0.29 | 0.24-0.36    |
+| Quintette | pre-mgmt             | 2002-2015 |        0.84 | 0.82-0.87 |        0.13 | 0.12-0.15 |                   0.19 | 0.14-0.57    |
 
 ``` r
 # summary.vr%>%
@@ -851,8 +857,8 @@ kable(
 | Growth    | Years     | Lambda |
 | :-------- | :-------- | -----: |
 | Klinse-Za | 2014-2021 |   1.13 |
-| Quintette | 2016-2021 |   1.07 |
-| Quintette | 2017-2021 |   1.14 |
+| Quintette | 2016-2021 |   1.05 |
+| Quintette | 2017-2021 |   1.10 |
 
 ## What proportion of non-calf females penned/yr
 
@@ -1016,7 +1022,7 @@ kable(summary.effect.refined)
 | Klinse-Za | refined wolf + refined pen |             0.168 | 0.144 | 0.192 |
 | Klinse-Za | refined pen                |             0.062 | 0.004 | 0.125 |
 | Klinse-Za | refined wolf               |             0.098 | 0.020 | 0.172 |
-| Quintette | Refined wolf               |             0.199 | 0.155 | 0.245 |
+| Quintette | Refined wolf               |             0.172 | 0.115 | 0.227 |
 
 ## Summarize refined period population growth
 
@@ -1064,5 +1070,5 @@ kable(summary.l.refined)
 | Klinse-Za | post-mgmt (refined wolf)               | 2017-2021 |   0.99 | 0.91-1.06 |
 | Klinse-Za | post-mgmt (wolf + refined pen)         | 2016-2021 |   1.07 | 1.05-1.09 |
 | Klinse-Za | pre-mgmt                               | 1996-2013 |   0.89 | 0.88-0.9  |
-| Quintette | post-mgmt (refined wolf)               | 2017-2021 |   1.14 | 1.11-1.17 |
-| Quintette | pre-mgmt                               | 2002-2015 |   0.94 | 0.91-0.97 |
+| Quintette | post-mgmt (refined wolf)               | 2017-2021 |   1.10 | 1.05-1.15 |
+| Quintette | pre-mgmt                               | 2002-2015 |   0.93 | 0.9-0.96  |

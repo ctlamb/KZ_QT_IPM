@@ -77,6 +77,11 @@ cri<-0.9
 
 ## ABUNDANCE
 ```{r Plot results-abundance, fig.height=8, fig.width=8, message=FALSE, warning=FALSE, results='hide'}
+###TREATMENTS
+##lambda=n/n-1 so it is growth over the previous year
+##QT wolf reductions started winter 2014/2015 so year 2015. But didnt get many wolves until 2015/2016, so year 2016. A lag expected in lambda so summarized as treatment year +1
+##KZ wolf reductions started winter 2012/2013 so year 2013. Gov got involved 2014/2015, so year 2015, and then refined 2015/2016, so year 2016.
+##KZ pen started winter 2013/2014 so year 2014. 1 year delay expected as recruited calves are counted the following March,
 
 abund_MF <- kz %>%
           spread_draws(totNMF[i]) %>%
@@ -149,11 +154,11 @@ ggplot(rbind(abund_MF,lambda_F),aes(x = yrs, y = est, ymin=lower, ymax=upper, fi
         legend.title=element_text(size=15))+
     geom_vline(data=data.frame(herd=unique(abund_MF$herd),
                                param=rep(unique(rbind(abund_MF,lambda_F)$param),each=2),
-                               year=rep(c(2012.5,2015.5)),times=2),
+                               year=rep(c(2013.5,2015.5)),times=2), ##years used are treatment + 0.5 year when effects expected following census
                aes(xintercept = year),linetype="dashed")+
       geom_vline(data=data.frame(herd=unique(abund_MF$herd),
                                param=rep(unique(rbind(abund_MF,lambda_F)$param),each=2),
-                               year=rep(c(2013.5,NA)),times=2),
+                               year=rep(c(2014.5,NA)),times=2), ##years used are treatment + 0.5 year when effects expected following census
                aes(xintercept = year),linetype="solid")
 
 
@@ -650,7 +655,7 @@ rbind(
   select(pop,period,"lambda"=".value","lower"=".lower","upper"=".upper")%>%
   arrange(pop,period)
   
-summary.l$Years <- c("2014-2021", "1996-2012", "2016-2021", "2002-2015")
+summary.l$Years <- c("2014-2021", "1996-2013", "2016-2021", "2002-2015")
 colnames(summary.l) <- c("Herd", "Period", "Lambda", "Lamba.Lower", "Lambda.Upper", "Years")
 
 
@@ -980,31 +985,31 @@ kable(summary.l.refined)
 
 
 ```{r Summarise sample sizes, eval=FALSE, include=FALSE, results='asis'}
-kz.raw <- read_excel("/Users/clayton.lamb/Dropbox/Caribou/JWM_Klinse-za demographics/Analysis/Klinse-zaEackerInputs_200607_CL.xlsx",
-                      sheet="SurvivalKlinse-zaSPenFre")%>%
+kz.raw <- read_excel("/Users/clayton.lamb/Dropbox/Caribou/EackerRelated/Klinse-zaEackerInputs_210509_SM.xlsx",
+                      sheet="SurvivalPenFreEndCensYr_21042")%>%
   mutate(dur=exit-enter)
 
-qt.raw <- read_excel("/Users/clayton.lamb/Dropbox/Caribou/JWM_Klinse-za demographics/Analysis/QuintetteEackerInputs_200710_CL.xlsx",
-                      sheet="QuintetteSPooled")%>%
+qt.raw <- read_excel("/Users/clayton.lamb/Dropbox/Caribou/EackerRelated/QuintetteEackerInputs_210509_CL.xlsx",
+                      sheet="QuintetteSPooled_CL_BCdata")%>%
   mutate(dur=exit-enter)
 
 
 kz.raw%>%
   filter(Year<=2013)%>%
-  summarise(an.yrs=sum(dur)/13, ##these were all 12
+  summarise(an.yrs=sum(dur)/12, 
             animals=n_distinct(id))
 
 kz.raw%>%
   filter(Year>2013)%>%
-  summarise(an.yrs=sum(dur)/13,
+  summarise(an.yrs=sum(dur)/12,
             animals=n_distinct(id))
 
 qt.raw%>%
-  summarise(an.yrs=sum(dur)/13,
+  summarise(an.yrs=sum(dur)/12,
             animals=n_distinct(id))
 
-qt.raw%>%select(id,Year,dur)%>%rbind(kz.raw%>%select(id,Year,dur))%>%
-    summarise(an.yrs=sum(dur)/13,
+qt.raw%>%select(id,Year=year,dur)%>%rbind(kz.raw%>%select(id,Year,dur))%>%
+    summarise(an.yrs=sum(dur)/12,
             animals=n_distinct(id))
 
 
