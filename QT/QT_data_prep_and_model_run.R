@@ -16,6 +16,7 @@ library(hrbrthemes)
 library(tidyverse)
 library(rjags)
 library(MCMCvis)
+library(readxl)
 library(here)
 
 ##define fn
@@ -26,22 +27,8 @@ gm_mean = function(a){prod(a)^(1/length(a))}
 adult_female_survival <- read.csv(here::here("data", "QT", "adult_female_survival_QT.csv"))
 adult_female_recruit <- read.csv(here::here("data", "QT", "adult_female_recruit_QT.csv"))
 
-adult_sex_ratio <- read.csv(here::here("data", "QT", "adult_sexratio_QT.csv"))
-
-
-count_dat <- read_xlsx(here::here("data", "QT", "Count_summary_QT.xlsx"))%>%
+count_dat <- read_xlsx(here::here("data", "QT", "Count_summary_QT_HEWR.xlsx"))%>%
   mutate_at(c("SurveryCount_ADULTMF","SurveryCount_CALFMF", "Estimate_ADULTMF","Estimate_CALFMF"), funs(round(., 0)))
-
-##remove 2019 est
-##significant evidence that this is a poor estimate of population abundance
-##min count was 34% > than the sightability corrected survey count.
-count_dat[19,"Estimate_ADULTMF"] <- NA
-count_dat[19,"SD_Estimate_ADULTMF"] <- NA
-count_dat[19,"Estimate_CALFMF"] <- NA
-count_dat[19,"SD_Estimate_CALFMF"] <- NA
-
-count_dat[19,"SurveryCount_ADULTMF"] <- NA
-count_dat[19,"SurveryCount_CALFMF"] <- NA
 
 sightability <- read.csv(here::here("data", "QT", "sightability_QT.csv"))
 
@@ -87,7 +74,7 @@ yr_df <- as.data.frame(cbind(yrs, yr_idx))
 
 
 #  Create vectors of sex ratio
-adult_sex_ratio <- adult_sex_ratio$Mean
+adult_sex_ratio <- count_dat$SexRatio
 
 
 #  Recruitment 
@@ -151,7 +138,7 @@ mindat <- count_dat %>%
 	mutate(dau = 1, 
 		age = NA,
 		pop = NA,
-		mu = SurveryCount_ADULTMF,
+		mu = MinCount_ADULTMF,
 		tau = NA) %>%
 	dplyr::filter(mu > 4) %>%
 	left_join(yr_df, by = c("Year" = "yrs")) %>%
@@ -161,7 +148,7 @@ calf_mindat <- count_dat %>%
 	mutate(dau = 1, 
 		age = NA,
 		pop = NA,
-		mu = SurveryCount_CALFMF,
+		mu = MinCount_CALFMF,
 		tau = NA) %>%
 	dplyr::filter(mu > 4) %>%
 	left_join(yr_df, by = c("Year" = "yrs")) %>%
@@ -219,7 +206,7 @@ ipm_inits <- function(){
 	
 #  Model parameters to monitor
 model_parms <- c("lambda","logla",
-	"totN", "N", "S", "R", "r1", "r2", 
+	"totN", "N", "S", "R", "r1", "r2", "R.ad",
 	#"wolfpen_eff_r", "wolfpen_eff_s",
 	"sa_yr", "r_yr", 
 	"totCalves", "totAdults",	

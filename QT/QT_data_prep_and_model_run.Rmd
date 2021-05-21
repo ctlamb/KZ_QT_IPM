@@ -38,33 +38,7 @@ adult_female_survival <- read.csv(here::here("data", "QT", "adult_female_surviva
 adult_female_recruit <- read.csv(here::here("data", "QT", "adult_female_recruit_QT.csv"))
 
 count_dat <- read_xlsx(here::here("data", "QT", "Count_summary_QT_HEWR.xlsx"))%>%
-  mutate_at(c("SurveryCount_ADULTMF","SurveryCount_CALFMF", "Estimate_ADULTMF","Estimate_CALFMF"), funs(round(., 0)))%>%
-    mutate(Estimate_ADULTMF=case_when(Estimate_ADULTMF<MinCount_ADULTMF~MinCount_ADULTMF, TRUE~Estimate_ADULTMF),
-         Estimate_CALFMF=case_when(Estimate_CALFMF<MinCount_CALFMF~MinCount_CALFMF, TRUE~Estimate_CALFMF))
-
-# ##remove 2019 est
-# ##significant evidence that this is a poor estimate of population abundance
-# ##min count was 34% > than the sightability corrected survey count.
-# count_dat[19,"Estimate_ADULTMF"] <- NA
-# count_dat[19,"SD_Estimate_ADULTMF"] <- NA
-# count_dat[19,"Estimate_CALFMF"] <- NA
-# count_dat[19,"SD_Estimate_CALFMF"] <- NA
-# 
-# count_dat[19,"SurveryCount_ADULTMF"] <- NA
-# count_dat[19,"SurveryCount_CALFMF"] <- NA
-# 
-# 
-# ##remove 2020 est
-# ##significant evidence that this is a poor estimate of population abundance
-# ##min count was 34% > than the sightability corrected survey count.
-# count_dat[21,"Estimate_ADULTMF"] <- NA
-# count_dat[21,"SD_Estimate_ADULTMF"] <- NA
-# count_dat[21,"Estimate_CALFMF"] <- NA
-# count_dat[21,"SD_Estimate_CALFMF"] <- NA
-# 
-# count_dat[21,"SurveryCount_ADULTMF"] <- NA
-# count_dat[21,"SurveryCount_CALFMF"] <- NA
-
+  mutate_at(c("SurveryCount_ADULTMF","SurveryCount_CALFMF", "Estimate_ADULTMF","Estimate_CALFMF"), funs(round(., 0)))
 
 sightability <- read.csv(here::here("data", "QT", "sightability_QT.csv"))
 ```
