@@ -371,7 +371,6 @@ validate_vr <- kz_vr%>%mutate(pop=case_when(pop%in%"Free"~"KZ-Wolf",
 
 ggsave(here::here("plots", "vitalratefit_F.png"), width=9, height=5)
 
-validate_vr%>%filter(param=="Recruitment", pop=="KZ-Wolf + Pen", yrs%in% c(2016:2021))
             
 ```
 

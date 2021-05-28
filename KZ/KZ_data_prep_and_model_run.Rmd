@@ -41,9 +41,9 @@ adult_female_recruit <- read.csv(here::here("data", "KZ", "adult_female_recruit_
 
 # remove survey counts <80% sightability
 count_dat <- read_xlsx(here::here("data", "KZ", "Count_summary_KZ.xlsx"))%>%
-  mutate_at(c("SurveryCount_ADULTMF","SurveryCount_CALFMF", "Estimate_ADULTMF","Estimate_CALFMF"), funs(round(., 0)))%>%
-  mutate(SurveryCount_ADULTMF=case_when(Mean_Sightability<0.8~NA_real_, TRUE~SurveryCount_ADULTMF),
-         SurveryCount_CALFMF=case_when(Mean_Sightability<0.8~NA_real_, TRUE~SurveryCount_CALFMF))
+  mutate_at(c("SurveryCount_ADULTMF","SurveryCount_CALFMF", "Estimate_ADULTMF","Estimate_CALFMF"), funs(round(., 0)))
+  # mutate(SurveryCount_ADULTMF=case_when(Mean_Sightability<0.8~NA_real_, TRUE~SurveryCount_ADULTMF),
+  #        SurveryCount_CALFMF=case_when(Mean_Sightability<0.8~NA_real_, TRUE~SurveryCount_CALFMF))
 
 
 
@@ -124,7 +124,7 @@ adult_female_recruit <- adult_female_recruit %>%
 
 meanr <- array(NA, c(1,1,2)) 
 meanr[1,1,1] <- mean(adult_female_recruit$Mean, na.rm = TRUE)
-meanr[1,1,2] <- 0.01
+meanr[1,1,2] <- 10
 
 
 # Survival - need estimates for both penned and control (not penned) population units
@@ -133,12 +133,12 @@ means <- array(NA, c(1,2,2))
 adult_female_survival_control <- adult_female_survival %>%
 	dplyr::filter(Pop == 1) 
 means[1,1,1] <- mean(adult_female_survival_control$Mean, na.rm = TRUE)
-means[1,1,2] <- 0.01
+means[1,1,2] <- 10
 
 adult_female_survival_pen <- adult_female_survival %>%
 	dplyr::filter(Pop == 2) 
 means[1,2,1] <- mean(adult_female_survival_pen$Mean, na.rm = TRUE)
-means[1,2,2] <- 0.01
+means[1,2,2] <- 10
 
 
 # Starting population size of population unit (vector of values for each age class)
@@ -154,7 +154,9 @@ sdat <- adult_female_survival %>%
 		age = 3,
 		pop = Pop,
 		mu = ifelse(Mean!= 1, Mean, 0.99),
-		tau = 1/ (SD * SD)) %>%
+		SD = ifelse(SD!= 0, SD, median(SD, na.rm=TRUE)))%>%
+  mutate(tau = 1/ ((SD/1) * (SD/1))) %>%
+  	#mutate(tau = 1/ (SD * SD)) %>%
 	dplyr::filter(!is.na(mu)) %>%
 	left_join(yr_df, by = c("Year" = "yrs")) %>%
 	dplyr::select(dau, yr = yr_idx, age, pop, mu, tau)
@@ -168,7 +170,9 @@ rdat <- adult_female_recruit  %>%
 		age = NA,
 		pop = Pop,
 		mu = Mean,
-		tau = 1/ (SD * SD)) %>%
+		SD = ifelse(SD!= 0, SD, median(SD, na.rm=TRUE)))%>%
+  mutate(tau = 1/ ((SD/1) * (SD/1))) %>%
+  	#mutate(tau = 1/ (SD * SD)) %>%
 	dplyr::filter(!is.na(mu)) %>%
 	left_join(yr_df, by = c("Year" = "yrs")) %>%
 	dplyr::select(dau, yr = yr_idx, age, pop, mu, tau) 
@@ -560,6 +564,17 @@ write_csv(raw.vr, here::here("data", "KZ", "vitalrate_validation_KZ.csv"))
 #   gm_mean()
 
 
+calc.vr%>%mutate(class="modelled")%>%
+  rbind(raw.vr%>%mutate(class="raw"))%>%
+  mutate(period=case_when(param%in%"Recruitment" & yrs<2015 ~"before",
+                          param%in%"Recruitment" & yrs>=2015 ~"after",
+                          param%in%"Survival" & yrs<2014 ~"before",
+                          param%in%"Survival" & yrs>=2014 ~"after"))%>%
+  group_by(param,pop,period, class)%>%
+  summarise(mean=mean(estimate, na.rm=TRUE),
+            median=median(estimate, na.rm=TRUE))%>%
+  arrange(param,pop,period)
+
 ```
 
 ##COMPARE TO RAW COUNT DATA
@@ -743,15 +758,15 @@ gt(summary.l)%>%
   ) 
 
 
-data.frame(rbind(yr_df),
-           est=c(out_rnd_eff$mean$totNMF),
-           q2.5=c(out_rnd_eff$q2.5$totNMF),
-           q97.5=c(out_rnd_eff$q97.5$totNMF),
-           param=rep(c("MinCount_All"), each=nyr))%>%
-  mutate(l = est/lag(est))%>%
-  filter(yrs>2013)%>%
-  drop_na(l)%>%
-  summarise(l.all=gm_mean(l)%>%round(2))
+# data.frame(rbind(yr_df),
+#            est=c(out_rnd_eff$mean$totNMF),
+#            q2.5=c(out_rnd_eff$q2.5$totNMF),
+#            q97.5=c(out_rnd_eff$q97.5$totNMF),
+#            param=rep(c("MinCount_All"), each=nyr))%>%
+#   mutate(l = est/lag(est))%>%
+#   filter(yrs>2013)%>%
+#   drop_na(l)%>%
+#   summarise(l.all=gm_mean(l)%>%round(2))
 
 
 ```

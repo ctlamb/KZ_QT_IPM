@@ -99,7 +99,7 @@ adult_female_recruit <- adult_female_recruit%>%	mutate(
 
 meanr <- array(NA, c(3,1,2)) 
 meanr[3,1,1] <- mean(adult_female_recruit$Mean, na.rm = TRUE)
-meanr[3,1,2] <- 0.01
+meanr[3,1,2] <- 10
 
 
 # Survival - need estimates for both penned and control (not penned) population units
@@ -110,7 +110,7 @@ adult_female_survival_control <- adult_female_survival %>%
 	dplyr::filter(Pop == 1) 
 
 means[2:3,1,1] <- mean(adult_female_survival_control$Mean, na.rm = TRUE)
-means[2:3,1,2] <- 0.01
+means[2:3,1,2] <- 10
 
 
 # Starting population size of population unit (vector of values for each age class)
@@ -126,7 +126,9 @@ sdat <- adult_female_survival %>%
 		age = 3,
 		pop = Pop,
 		mu = ifelse(Mean!= 1, Mean, 0.99),
-		tau = 1/ (SD * SD)) %>%
+		SD = ifelse(SD!= 0, SD, median(SD, na.rm=TRUE)))%>%
+  mutate(tau = 1/ ((SD/1) * (SD/1))) %>%
+  	#mutate(tau = 1/ (SD * SD)) %>%
 	dplyr::filter(!is.na(mu)) %>%
 	left_join(yr_df, by = c("Year" = "yrs")) %>%
 	dplyr::select(dau, yr = yr_idx, age, pop, mu, tau)
@@ -140,7 +142,9 @@ rdat <- adult_female_recruit  %>%
 		age = NA,
 		pop = Pop,
 		mu = Mean,
-		tau = 1/ (SD * SD)) %>%
+		SD = ifelse(SD!= 0, SD, median(SD, na.rm=TRUE)))%>%
+  mutate(tau = 1/ ((SD/1) * (SD/1))) %>%
+  	#mutate(tau = 1/ (SD * SD)) %>%
 	dplyr::filter(!is.na(mu)) %>%
 	left_join(yr_df, by = c("Year" = "yrs")) %>%
 	dplyr::select(dau, yr = yr_idx, age, pop, mu, tau) 
