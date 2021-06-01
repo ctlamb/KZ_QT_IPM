@@ -12,11 +12,11 @@ rmarkdown::render(here::here('Plot_Together.Rmd'),
 ```
 
 # **README**
-### This markdown is used to summarise the results from each subpopulation IPM
-### See folders KZ and QT for the IPM’s for each subpopulation (KZ and QT folder)
-### Data for each subpopulation can be found in the "data" folder
-### JAGS code for each subpopulation IPM can be found in the "jags" folder
-### Note: run KZ and QT IPMS first, then the Plot_Together.RMD to create the .rdata needed
+#### 1) This markdown is used to summarise the results from each subpopulation IPM
+#### 2) See folders KZ and QT for the IPM’s for each subpopulation (KZ and QT folder)
+#### 3) Data for each subpopulation can be found in the "data" folder
+#### 4) JAGS code for each subpopulation IPM can be found in the "jags" folder
+#### 5) Note: run KZ and QT IPMS first to create the .rdata needed, then the Plot_Together.RMD 
 
 ## Load Data
 ```{r Load packages and data, results='hide', message=FALSE, warning=FALSE}
