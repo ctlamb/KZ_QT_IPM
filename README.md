@@ -5,15 +5,15 @@ Sara Williams, Hans Martin, and Clayton Lamb
 
 # **README**
 
-### This markdown is used to summarise the results from each subpopulation IPM
+#### 1\) This markdown is used to summarise the results from each subpopulation IPM
 
-### See folders KZ and QT for the IPM’s for each subpopulation (KZ and QT folder)
+#### 2\) See folders KZ and QT for the IPM’s for each subpopulation (KZ and QT folder)
 
-### Data for each subpopulation can be found in the “data” folder
+#### 3\) Data for each subpopulation can be found in the “data” folder
 
-### JAGS code for each subpopulation IPM can be found in the “jags” folder
+#### 4\) JAGS code for each subpopulation IPM can be found in the “jags” folder
 
-### Note: run KZ and QT IPMS first, then the Plot\_Together.RMD to create the .rdata needed
+#### 5\) Note: run KZ and QT IPMS first to create the .rdata needed, then the Plot\_Together.RMD
 
 ## Load Data
 
