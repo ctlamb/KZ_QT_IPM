@@ -101,8 +101,8 @@ means[2:3,1,2] <- 10
 # Starting population size of population unit (vector of values for each age class)
 n1 <- numeric()
 n1[1] <- count_dat$Estimate_CALFMF[2]*.5
-n1[2] <- count_dat$Estimate_ADULTMF[2]*.15*count_dat$SexRatio[2]
-n1[3] <- count_dat$Estimate_ADULTMF[2]*.85*count_dat$SexRatio[2]
+n1[2] <- count_dat$Estimate_ADULTMF[2]*.1*count_dat$SexRatio[2]
+n1[3] <- count_dat$Estimate_ADULTMF[2]*.9*count_dat$SexRatio[2]
 
 
 #  Survival estimates by year of penned and control (not penned) population units separately

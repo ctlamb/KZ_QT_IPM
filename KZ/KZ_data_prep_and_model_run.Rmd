@@ -9,9 +9,9 @@ output: github_document
 ```{r render, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, results='hide'}
 rmarkdown::render(here::here('KZ','KZ_data_prep_and_model_run.Rmd'),
                   output_file = "README.md")
-
-knitr::purl(input=here::here("KZ",'KZ_data_prep_and_model_run.Rmd'),
-            output=here::here("KZ",'KZ_data_prep_and_model_run.R'))
+# 
+# knitr::purl(input=here::here("KZ",'KZ_data_prep_and_model_run.Rmd'),
+#             output=here::here("KZ",'KZ_data_prep_and_model_run.R'))
 ```
 
 ##Load Data
@@ -144,8 +144,8 @@ means[1,2,2] <- 10
 # Starting population size of population unit (vector of values for each age class)
 n1 <- numeric()
 n1[1] <- count_dat$Estimate_CALFMF[1]*.5
-n1[2] <- count_dat$Estimate_ADULTMF[1]*.15*count_dat$SexRatio[1]
-n1[3] <- count_dat$Estimate_ADULTMF[1]*.85*count_dat$SexRatio[1]
+n1[2] <- count_dat$Estimate_ADULTMF[1]*.1*count_dat$SexRatio[1]
+n1[3] <- count_dat$Estimate_ADULTMF[1]*.9*count_dat$SexRatio[1]
 
 
 #  Survival estimates by year of penned and control (not penned) population units separately
