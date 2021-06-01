@@ -3,7 +3,17 @@ KZ and QT IPM results
 Sara Williams, Hans Martin, and Clayton Lamb
 01 June, 2021
 
-# See folders KZ and QT for the IPM’s for each herd
+# **README**
+
+### This markdown is used to summarise the results from each subpopulation IPM
+
+### See folders KZ and QT for the IPM’s for each subpopulation (KZ and QT folder)
+
+### Data for each subpopulation can be found in the “data” folder
+
+### JAGS code for each subpopulation IPM can be found in the “jags” folder
+
+### Note: run KZ and QT IPMS first, then the Plot\_Together.RMD to create the .rdata needed
 
 ## Load Data
 
@@ -23,12 +33,6 @@ library(piggyback)
 library(tidybayes)
 library(here)
 
-# pb_download("kz_out_rnd_eff.Rdata", 
-#             repo = "ctlamb/KZ_QT_IPM",
-#             dest = here::here())
-# load(here::here("kz_out_rnd_eff.Rdata"))
-# kz <- out_rnd_eff
-# unlink(here::here("kz_out_rnd_eff.Rdata"))
 load(here::here("output", "kz_out_rnd_eff.Rdata"))
 kz <- out_rnd_eff
 
@@ -38,13 +42,6 @@ yr_idx <- seq(from = 1, to = nyr, by = 1)
 kz_yr_df <- as.data.frame(cbind(yrs, yr_idx))
 
 
-
-# pb_download("qt_out_rnd_eff.Rdata", 
-#             repo = "ctlamb/KZ_QT_IPM",
-#             dest = here::here())
-# load(here::here("qt_out_rnd_eff.Rdata"))
-# qt <- out_rnd_eff
-# unlink(here::here("qt_out_rnd_eff.Rdata"))
 load(here::here("output", "qt_out_rnd_eff.Rdata"))
 qt <- out_rnd_eff
 
