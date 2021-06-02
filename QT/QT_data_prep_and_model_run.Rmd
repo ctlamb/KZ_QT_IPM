@@ -393,16 +393,16 @@ calc.vr <- pop_df2%>%
 raw.vr <- rbind(adult_female_survival%>%mutate(param="Survival",
                                          pop=case_when(Pop_desc%in%"Control"~"Free",TRUE~as.character(Pop_desc)),
                                          estimate=Mean,
-                                         lower=NA,
-                                         upper=NA,
+                                         lower=Mean-(SD*1.64),
+                                         upper=Mean+(SD*1.64),
                                          yrs=Year)%>%
   dplyr::select(estimate,lower,upper,pop,param,yrs),  ###ADD AFS
   
   adult_female_recruit%>%mutate(param="Recruitment",
                                          pop=case_when(Pop_desc%in%"Control"~"Free",TRUE~as.character(Pop_desc)),
                                          estimate=Mean,
-                                         lower=NA,
-                                         upper=NA,
+                                         lower=Mean-(SD*1.64),
+                                         upper=Mean+(SD*1.64),
                                          yrs=Year)%>%
    dplyr::select(estimate,lower,upper,pop,param,yrs))  ###ADD FREE RECRUIT
   

@@ -1,13 +1,13 @@
 KZ and QT IPM results
 ================
 Sara Williams, Hans Martin, and Clayton Lamb
-01 June, 2021
+02 June, 2021
 
 # **README**
 
 #### 1\) This markdown is used to summarise the results from each subpopulation IPM
 
-#### 2\) See folders KZ and QT for the IPM’s for each subpopulation (KZ and QT folder)
+#### 2\) See folders KZ and QT for the IPM’s of each subpopulation (KZ and QT folders)
 
 #### 3\) Data for each subpopulation can be found in the “data” folder
 
@@ -29,7 +29,6 @@ library(rjags)
 library(MCMCvis)
 library(ggpubr)
 library(readxl)
-library(piggyback)
 library(tidybayes)
 library(here)
 
@@ -176,8 +175,8 @@ fit_df <- abund_MF%>%
   ##Estimates
   rbind(
     data.frame(est=kz_count_dat$Estimate_ADULTMF + kz_count_dat$Estimate_CALFMF,
-                     lower=NA,
-                     upper=NA,
+                     lower=(kz_count_dat$Estimate_ADULTMF + kz_count_dat$Estimate_CALFMF)-((kz_count_dat$SD_Estimate_ADULTMF + kz_count_dat$SD_Estimate_CALFMF)*1.645),
+                     upper=(kz_count_dat$Estimate_ADULTMF + kz_count_dat$Estimate_CALFMF)+((kz_count_dat$SD_Estimate_ADULTMF + kz_count_dat$SD_Estimate_CALFMF)*1.645),
                      param="Total M+F",
                      herd="Klinse-Za",
                      kz_yr_df,
@@ -185,8 +184,8 @@ fit_df <- abund_MF%>%
     )%>%
   rbind(
      data.frame(est=qt_count_dat$Estimate_ADULTMF + qt_count_dat$Estimate_CALFMF,
-                     lower=NA,
-                     upper=NA,
+                     lower=(qt_count_dat$Estimate_ADULTMF + qt_count_dat$Estimate_CALFMF)-((qt_count_dat$SD_Estimate_ADULTMF + qt_count_dat$SD_Estimate_CALFMF)*1.645),
+                     upper=(qt_count_dat$Estimate_ADULTMF + qt_count_dat$Estimate_CALFMF)+((qt_count_dat$SD_Estimate_ADULTMF + qt_count_dat$SD_Estimate_CALFMF)*1.645),
                      param="Total M+F",
                      herd="Quintette",
                      qt_yr_df,
@@ -219,7 +218,8 @@ ggplot(data=fit_df%>%filter(type%in%"modelled"), aes(x = yrs, y = est, ymin=lowe
   geom_ribbon(alpha=0.4)+
   geom_line(aes(color=type)) +
   geom_point(aes(color=type)) +
-  geom_jitter(data=fit_df%>%filter(!type%in%"modelled"),aes(color=type), size=1) +
+  geom_point(data=fit_df%>%filter(!type%in%"modelled"),aes(color=type), size=1) +
+    geom_linerange(data=fit_df%>%filter(!type%in%"modelled"),aes(color=type, ymin=lower, ymax=upper)) +
   theme_ipsum()+
   ylab("Abundance")+
   xlab("Year")+
@@ -321,9 +321,9 @@ qt %>%
 
 
 mod_vr <- rbind(pop_df_r, pop_df_s)%>%
-         filter(yrs>1995)%>%
-         mutate(est=case_when(param=="Recruitment" & yrs<=2015 & pop=="KZ-Wolf + Pen"~NA_real_, 
-                                   param=="Survival" & yrs<=2014 & pop=="KZ-Wolf + Pen"~NA_real_, 
+         filter(yrs>=1995)%>%
+         mutate(est=case_when(param=="Recruitment" & yrs<=2014 & pop=="KZ-Wolf + Pen"~NA_real_, 
+                                   param=="Survival" & yrs<=2013 & pop=="KZ-Wolf + Pen"~NA_real_, 
                                    TRUE~est))%>%
   mutate(type="Modelled")
 
@@ -353,11 +353,16 @@ validate_vr <- kz_vr%>%mutate(pop=case_when(pop%in%"Free"~"KZ-Wolf",
   mutate(type="Observed")%>%
   rename(est=estimate)%>%
   select(colnames(mod_vr))%>%
-  rbind(mod_vr)
+  rbind(mod_vr)%>%
+  filter(!(param=="Survival" & yrs==2021))
 
-  ggplot(validate_vr,aes(x = yrs, y = est, fill=type, ymin=lower, ymax=upper)) +
-  geom_line(aes(color=type)) +
+ggplot(data=validate_vr%>%filter(type%in%"Modelled"), aes(x = yrs, y = est, ymin=lower, ymax=upper, fill=type)) +
+  #geom_cloud(steps=20, max_alpha = 1,se_mult=1.96)+
   geom_ribbon(alpha=0.4)+
+  geom_line(aes(color=type)) +
+  geom_point(aes(color=type)) +
+  geom_point(data=validate_vr%>%filter(!type%in%"Modelled"),aes(color=type), size=1) +
+    geom_linerange(data=validate_vr%>%filter(!type%in%"Modelled"),aes(color=type, ymin=lower, ymax=upper)) +
   theme_ipsum()+
   labs(x="Year", y="Rate", title="Annual vital rates")+
     geom_vline(data=data.frame(pop=unique(mod_vr$pop), yrs=c(2013.5,2012.5,2015.5), param="Recruitment")%>%
@@ -618,7 +623,7 @@ kable(summary.sim)
 | Herd      | Period   | Lambda | 90% CrI   |
 | :-------- | :------- | -----: | :-------- |
 | Klinse-Za | Control  |   0.90 | 0.89-0.91 |
-| Klinse-Za | Wolf     |   1.01 | 0.96-1.06 |
+| Klinse-Za | Wolf     |   1.02 | 0.97-1.06 |
 | Klinse-Za | Wolf+Pen |   1.09 | 1.08-1.09 |
 
 ## Wolf vs Pen effect
@@ -688,7 +693,7 @@ kable(summary.l)
 
 | Herd      | Period    | Years     | Lambda | 90% CrI   |
 | :-------- | :-------- | :-------- | -----: | :-------- |
-| Klinse-Za | post-mgmt | 2014-2021 |   1.08 | 1.06-1.09 |
+| Klinse-Za | post-mgmt | 2014-2021 |   1.08 | 1.06-1.1  |
 | Klinse-Za | pre-mgmt  | 1996-2013 |   0.90 | 0.89-0.91 |
 | Quintette | post-mgmt | 2016-2021 |   1.05 | 0.99-1.11 |
 | Quintette | pre-mgmt  | 2002-2015 |   0.93 | 0.9-0.96  |
@@ -720,10 +725,10 @@ kable(summary.effect)
 
 | pop       | period     | lambda difference | lower | upper |
 | :-------- | :--------- | ----------------: | ----: | ----: |
-| Klinse-Za | wolf + pen |             0.179 | 0.158 | 0.199 |
-| Klinse-Za | pen        |             0.068 | 0.021 | 0.119 |
-| Klinse-Za | wolf       |             0.111 | 0.057 | 0.161 |
-| Quintette | wolf       |             0.116 | 0.031 | 0.199 |
+| Klinse-Za | wolf + pen |             0.181 | 0.161 | 0.201 |
+| Klinse-Za | pen        |             0.064 | 0.019 | 0.113 |
+| Klinse-Za | wolf       |             0.118 | 0.065 | 0.166 |
+| Quintette | wolf       |             0.117 | 0.033 | 0.198 |
 
 ## Summarize vital rates
 
@@ -824,10 +829,10 @@ kable(summary.vr)
 
 | Group     | Period               | Years     | AF Survival | 90% CrI   | Recruitment | r90% CrI  | Recruitment-Adult Only | r.ad.90% CrI |
 | :-------- | :------------------- | :-------- | ----------: | :-------- | ----------: | :-------- | ---------------------: | :----------- |
-| Klinse-Za | post-mgmt (pooled)   | 2014-2021 |        0.88 | 0.86-0.91 |        0.22 | 0.21-0.23 |                   0.26 | 0.23-0.28    |
-| Klinse-Za | post-mgmt (wolf)     | 2013-2021 |        0.87 | 0.83-0.92 |        0.17 | 0.15-0.19 |                   0.21 | 0.17-0.26    |
+| Klinse-Za | post-mgmt (pooled)   | 2014-2021 |        0.89 | 0.86-0.91 |        0.22 | 0.21-0.23 |                   0.25 | 0.23-0.28    |
+| Klinse-Za | post-mgmt (wolf)     | 2013-2021 |        0.88 | 0.83-0.92 |        0.16 | 0.14-0.19 |                   0.21 | 0.17-0.26    |
 | Klinse-Za | post-mgmt (wolf+pen) | 2014-2021 |        0.90 | 0.9-0.9   |        0.28 | 0.28-0.28 |                   0.30 | 0.3-0.3      |
-| Klinse-Za | pre-mgmt             | 1995-2012 |        0.78 | 0.75-0.81 |        0.15 | 0.13-0.17 |                   0.20 | 0.16-0.25    |
+| Klinse-Za | pre-mgmt             | 1995-2012 |        0.78 | 0.75-0.81 |        0.15 | 0.13-0.17 |                   0.19 | 0.15-0.24    |
 | Quintette | post-mgmt            | 2016-2021 |        0.88 | 0.83-0.91 |        0.18 | 0.16-0.21 |                   0.28 | 0.22-0.35    |
 | Quintette | pre-mgmt             | 2002-2015 |        0.85 | 0.82-0.88 |        0.13 | 0.12-0.15 |                   0.15 | 0.12-0.21    |
 
@@ -1013,11 +1018,11 @@ kable(summary.effect.refined)
 
 | pop       | period                     | lambda difference | lower | upper |
 | :-------- | :------------------------- | ----------------: | ----: | ----: |
-| Klinse-Za | wolf + refined pen         |             0.178 | 0.157 | 0.200 |
-| Klinse-Za | refined wolf + refined pen |             0.166 | 0.142 | 0.189 |
-| Klinse-Za | refined pen                |             0.068 | 0.016 | 0.127 |
-| Klinse-Za | refined wolf               |             0.090 | 0.019 | 0.156 |
-| Quintette | Refined wolf               |             0.182 | 0.120 | 0.246 |
+| Klinse-Za | wolf + refined pen         |             0.182 | 0.161 | 0.204 |
+| Klinse-Za | refined wolf + refined pen |             0.169 | 0.145 | 0.193 |
+| Klinse-Za | refined pen                |             0.065 | 0.014 | 0.123 |
+| Klinse-Za | refined wolf               |             0.095 | 0.025 | 0.160 |
+| Quintette | Refined wolf               |             0.183 | 0.121 | 0.246 |
 
 ## Summarize refined period population growth
 
@@ -1061,8 +1066,8 @@ kable(summary.l.refined)
 | Herd      | Period                                 | Years     | Lambda | 90% CrI   |
 | :-------- | :------------------------------------- | :-------- | -----: | :-------- |
 | Klinse-Za | post-mgmt (refined pen)                | 2016-2021 |   1.11 | 1.11-1.11 |
-| Klinse-Za | post-mgmt (refined wolf + refined pen) | 2017-2021 |   1.07 | 1.04-1.09 |
-| Klinse-Za | post-mgmt (refined wolf)               | 2017-2021 |   0.99 | 0.92-1.06 |
+| Klinse-Za | post-mgmt (refined wolf + refined pen) | 2017-2021 |   1.07 | 1.05-1.09 |
+| Klinse-Za | post-mgmt (refined wolf)               | 2017-2021 |   1.00 | 0.92-1.06 |
 | Klinse-Za | post-mgmt (wolf + refined pen)         | 2016-2021 |   1.08 | 1.06-1.1  |
 | Klinse-Za | pre-mgmt                               | 1996-2013 |   0.90 | 0.89-0.91 |
 | Quintette | post-mgmt (refined wolf)               | 2017-2021 |   1.12 | 1.06-1.17 |

@@ -25,7 +25,6 @@ library(hrbrthemes)
 library(RColorBrewer)
 library(MCMCvis)
 library(readxl)
-library(piggyback)
 library(here)
 library(usethis)
 library(tidyverse)
@@ -502,16 +501,16 @@ adults.inpen <-read.csv(here::here("data", "KZ", "adult_female_pencount_endofyea
 raw.vr <- rbind(adult_female_survival%>%mutate(param="Survival",
                                          pop=case_when(Pop_desc%in%"Control"~"Free",TRUE~as.character(Pop_desc)),
                                          estimate=Mean,
-                                         lower=NA,
-                                         upper=NA,
+                                         lower=Mean-(SD*1.64),
+                                         upper=Mean+(SD*1.64),
                                          yrs=Year)%>%
   select(estimate,lower,upper,pop,param,yrs),  ###ADD AFS
   
   adult_female_recruit%>%mutate(param="Recruitment",
                                          pop=case_when(Pop_desc%in%"Control"~"Free",TRUE~as.character(Pop_desc)),
                                          estimate=Mean,
-                                         lower=NA,
-                                         upper=NA,
+                                         lower=Mean-(SD*1.64),
+                                         upper=Mean+(SD*1.64),
                                          yrs=Year)%>%
   select(estimate,lower,upper,pop,param,yrs),  ###ADD FREE RECRUIT
   
@@ -616,20 +615,23 @@ ggplot(aes(x = yrs, y = est, fill=class)) +
 
 raw.abund.f <-data.frame(param="F_Count",
                                          est=count_dat$F_max/count_dat$Mean_Sightability,
-                                         q2.5=NA,
-                                         q97.5=NA,
+                                         q2.5=count_dat$F_max/(count_dat$Mean_Sightability+(count_dat$SD_Sightability*1.645)),
+                                         q97.5=count_dat$F_max/(count_dat$Mean_Sightability-(count_dat$SD_Sightability*1.645)),
                                          yrs=yr_df$yrs,
                                          yr_idx=NA)%>%
   select(colnames(res_df))
 
 
-res_df%>%filter(param%in%"totN")%>%mutate(class="modelled")%>%
+f.plot <- res_df%>%filter(param%in%"totN")%>%mutate(class="modelled")%>%
   rbind(raw.abund.f%>%as.data.frame()%>%mutate(class="observed"))%>%
-  filter(param%in%c("totN", "F_Count"))%>%
-ggplot(aes(x = yrs, y = est, fill=class)) +
+  filter(param%in%c("totN", "F_Count"))
+
+ggplot(data=f.plot%>%filter(class=="modelled"),aes(x = yrs, y = est, fill=class)) +
   geom_cloud(aes( ymin=q2.5, ymax=q97.5),steps=20, max_alpha = 1,se_mult=1.96)+
   geom_line(aes(color=class)) +
   geom_point(aes(color=class)) +
+    geom_linerange(data=f.plot%>%filter(class!="modelled"), aes(color=class, ymin=q2.5, ymax=q97.5,x = yrs, y = est)) +
+    geom_point(data=f.plot%>%filter(class!="modelled"), aes(color=class,x = yrs, y = est)) +
   theme_ipsum()+
   theme_ipsum()+
   labs(x="Year", y="Female Abundance", title="Comparing modelled vs observed population estimates")+
