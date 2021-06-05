@@ -127,8 +127,7 @@ sdat <- adult_female_survival %>%
 		pop = Pop,
 		mu = ifelse(Mean!= 1, Mean, 0.99),
 		SD = ifelse(SD!= 0, SD, median(SD, na.rm=TRUE)))%>%
-  mutate(tau = 1/ ((SD/1) * (SD/1))) %>%
-  	#mutate(tau = 1/ (SD * SD)) %>%
+  	mutate(tau = 1/ (SD * SD)) %>%
 	dplyr::filter(!is.na(mu)) %>%
 	left_join(yr_df, by = c("Year" = "yrs")) %>%
 	dplyr::select(dau, yr = yr_idx, age, pop, mu, tau)
@@ -143,8 +142,7 @@ rdat <- adult_female_recruit  %>%
 		pop = Pop,
 		mu = Mean,
 		SD = ifelse(SD!= 0, SD, median(SD, na.rm=TRUE)))%>%
-  mutate(tau = 1/ ((SD/1) * (SD/1))) %>%
-  	#mutate(tau = 1/ (SD * SD)) %>%
+  	mutate(tau = 1/ (SD * SD)) %>%
 	dplyr::filter(!is.na(mu)) %>%
 	left_join(yr_df, by = c("Year" = "yrs")) %>%
 	dplyr::select(dau, yr = yr_idx, age, pop, mu, tau) 
