@@ -232,7 +232,7 @@ nt <- 3
 nb <- 8000
 nc <- 3
 nad <- 5000
-ni <- 50000
+ni <- 200000
 
 
 #  Gather data inputs in a list

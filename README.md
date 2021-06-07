@@ -1,7 +1,7 @@
 KZ and QT IPM results
 ================
 Sara Williams, Hans Martin, and Clayton Lamb
-04 June, 2021
+07 June, 2021
 
 # **README**
 
@@ -693,7 +693,7 @@ kable(summary.l)
 
 | Herd      | Period    | Years     | Lambda | 90% CrI   |
 | :-------- | :-------- | :-------- | -----: | :-------- |
-| Klinse-Za | post-mgmt | 2014-2021 |   1.08 | 1.07-1.1  |
+| Klinse-Za | post-mgmt | 2014-2021 |   1.08 | 1.06-1.1  |
 | Klinse-Za | pre-mgmt  | 1996-2013 |   0.90 | 0.89-0.91 |
 | Quintette | post-mgmt | 2016-2021 |   1.05 | 0.98-1.11 |
 | Quintette | pre-mgmt  | 2002-2015 |   0.93 | 0.9-0.96  |
@@ -727,7 +727,7 @@ kable(summary.effect)
 | :-------- | :--------- | ----------------: | ----: | ----: |
 | Klinse-Za | wolf + pen |             0.181 | 0.161 | 0.202 |
 | Klinse-Za | pen        |             0.063 | 0.018 | 0.114 |
-| Klinse-Za | wolf       |             0.118 | 0.064 | 0.168 |
+| Klinse-Za | wolf       |             0.118 | 0.064 | 0.167 |
 | Quintette | wolf       |             0.115 | 0.030 | 0.197 |
 
 ## Summarize vital rates
@@ -1018,8 +1018,8 @@ kable(summary.effect.refined)
 
 | pop       | period                     | lambda difference | lower | upper |
 | :-------- | :------------------------- | ----------------: | ----: | ----: |
-| Klinse-Za | wolf + refined pen         |             0.182 | 0.161 | 0.203 |
-| Klinse-Za | refined wolf + refined pen |             0.169 | 0.146 | 0.192 |
+| Klinse-Za | wolf + refined pen         |             0.182 | 0.161 | 0.204 |
+| Klinse-Za | refined wolf + refined pen |             0.169 | 0.146 | 0.193 |
 | Klinse-Za | refined pen                |             0.065 | 0.014 | 0.124 |
 | Klinse-Za | refined wolf               |             0.096 | 0.024 | 0.160 |
 | Quintette | Refined wolf               |             0.182 | 0.120 | 0.244 |
@@ -1036,8 +1036,7 @@ summary.l.refined <-
                           `.variable`%in% "geom_mean_lambda_postpen_iWolf" ~"post-mgmt (refined wolf + refined pen)",
                           `.variable`%in% "geom_mean_lambda_postpen_iPen" ~"post-mgmt (wolf + refined pen)",
                           `.variable`%in% "geom_mean_lambda_SimC_iWolf" ~"post-mgmt (refined wolf)",
-                          `.variable`%in% "geom_mean_lambda_SimPen_iPen" ~"post-mgmt (refined pen)")
-         )%>%
+                          `.variable`%in% "geom_mean_lambda_SimPen_iPen" ~"post-mgmt (refined pen)"))%>%
 rbind(
   qt %>%
   gather_draws(geom_mean_lambda_pre,geom_mean_lambda_post_iwolf)%>%

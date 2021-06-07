@@ -948,8 +948,7 @@ summary.l.refined <-
                           `.variable`%in% "geom_mean_lambda_postpen_iWolf" ~"post-mgmt (refined wolf + refined pen)",
                           `.variable`%in% "geom_mean_lambda_postpen_iPen" ~"post-mgmt (wolf + refined pen)",
                           `.variable`%in% "geom_mean_lambda_SimC_iWolf" ~"post-mgmt (refined wolf)",
-                          `.variable`%in% "geom_mean_lambda_SimPen_iPen" ~"post-mgmt (refined pen)")
-         )%>%
+                          `.variable`%in% "geom_mean_lambda_SimPen_iPen" ~"post-mgmt (refined pen)"))%>%
 rbind(
   qt %>%
   gather_draws(geom_mean_lambda_pre,geom_mean_lambda_post_iwolf)%>%
