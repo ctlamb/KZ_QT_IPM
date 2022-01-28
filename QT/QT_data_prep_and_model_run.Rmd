@@ -240,11 +240,12 @@ model_parms <- c("lambda","logla",
 	"mean_r3_pre", "mean_r3_post")
 
 
-nt <- 3
-nb <- 8000
+
+nt <- 10
+nb <- 75000 # 3000
 nc <- 3
 nad <- 5000
-ni <- 50000
+ni <- 200000 # 20000
 
 out_rnd_eff <- jagsUI::jags(ipm_dat, 
 	inits = ipm_inits,
@@ -257,6 +258,14 @@ out_rnd_eff <- jagsUI::jags(ipm_dat,
 	n.adapt = nad)
 
 save(out_rnd_eff, file = here::here("output", "qt_out_rnd_eff.Rdata"))
+
+##noticed summary(out_rnd_eff) throws **WARNING** Rhat values indicate convergence failure. 
+##inspected rhats and noticed one parameter (R.ad[2]) had rhat>1.1, the rest all looked good
+##increased iterations and did not get rhat for R.ad[2] <1.1
+##R.ad[2] is not used in averages of R.ad:
+#	 mean_r3_pre <- mean(R.ad[3:15])
+#	 mean_r3_post <- mean(R.ad[16:21])
+##This is not a concern for this analysis and its results, all other params look good
 
 ```
 
