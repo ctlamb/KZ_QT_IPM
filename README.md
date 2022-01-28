@@ -1,7 +1,7 @@
 KZ and QT IPM results
 ================
 Sara Williams, Hans Martin, and Clayton Lamb
-07 June, 2021
+28 January, 2022
 
 # **README**
 
@@ -154,7 +154,7 @@ ggplot(rbind(abund_MF,lambda_F),aes(x = yrs, y = est, ymin=lower, ymax=upper, fi
 ![](README_files/figure-gfm/Plot%20results-abundance-1.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots", "abundance_MF.png"), width=8, height=8)
+ggsave(here::here("plots", "abundance_MF.png"), width=8, height=8, dpi=500, bg="white")
 write_csv(abund_MF%>%mutate_if(is.numeric, round, 1), here::here("tables", "abundance_MF.csv"))
 
 write_csv(kz %>%
@@ -236,7 +236,7 @@ ggplot(data=fit_df%>%filter(type%in%"modelled"), aes(x = yrs, y = est, ymin=lowe
 ![](README_files/figure-gfm/Plot%20results-abundance%20fit-1.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots", "abundancefit_MF.png"), width=9, height=5)
+ggsave(here::here("plots", "abundancefit_MF.png"), width=9, height=5, dpi=500, bg="white")
 ```
 
 ## VITAL RATES
@@ -341,7 +341,7 @@ ggplot(mod_vr,
 ![](README_files/figure-gfm/Plot%20results-vital%20rates-1.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots", "vitalrate_F.png"), width=9, height=5)
+ggsave(here::here("plots", "vitalrate_F.png"), width=9, height=5, dpi=500, bg="white")
 ```
 
 ## COMPARE TO RAW VITAL RATE DATA
@@ -373,7 +373,7 @@ ggplot(data=validate_vr%>%filter(type%in%"Modelled"), aes(x = yrs, y = est, ymin
 ![](README_files/figure-gfm/Plot%20results-vital%20rates%20vs%20raw%20data-1.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots", "vitalratefit_F.png"), width=9, height=5)
+ggsave(here::here("plots", "vitalratefit_F.png"), width=9, height=5, dpi=500, bg="white")
 ```
 
 ## WOLF EFFECT
@@ -419,7 +419,7 @@ ggplot(wolf_effects%>%filter(Parameter%in%"All Wolf Control"), aes(x = value,fil
 ![](README_files/figure-gfm/wolf-1.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots", "wolf_effect.png"), width=6, height=5)
+ggsave(here::here("plots", "wolf_effect.png"), width=6, height=5, dpi=500, bg="white")
 ```
 
 ## KZ EFFECT
@@ -483,7 +483,7 @@ ggarrange(a,b,labels="AUTO")
 ![](README_files/figure-gfm/kz%20effect-1.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots", "KZ_effect_and_sim.png"), width=11, height=5)
+ggsave(here::here("plots", "KZ_effect_and_sim.png"), width=11, height=5, dpi=500, bg="white")
 ```
 
 ## AGE STRUCTURE
@@ -650,7 +650,7 @@ ggplot(aes(x = value,fill=Treatment)) +
 ![](README_files/figure-gfm/Wolf%20vs%20Pen%20effect-1.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots", "KZ_effect_prop.png"), width=7, height=5)
+ggsave(here::here("plots", "KZ_effect_prop.png"), width=7, height=5, dpi=500, bg="white")
 
 kz$mean$wolf_eff_proportion
 kz$mean$pen_eff_proportion
@@ -695,7 +695,7 @@ kable(summary.l)
 | :-------- | :-------- | :-------- | -----: | :-------- |
 | Klinse-Za | post-mgmt | 2014-2021 |   1.08 | 1.06-1.1  |
 | Klinse-Za | pre-mgmt  | 1996-2013 |   0.90 | 0.89-0.91 |
-| Quintette | post-mgmt | 2016-2021 |   1.05 | 0.98-1.11 |
+| Quintette | post-mgmt | 2016-2021 |   1.05 | 0.99-1.11 |
 | Quintette | pre-mgmt  | 2002-2015 |   0.93 | 0.9-0.96  |
 
 ## Summarize effect of treatments
@@ -728,7 +728,7 @@ kable(summary.effect)
 | Klinse-Za | wolf + pen |             0.181 | 0.161 | 0.202 |
 | Klinse-Za | pen        |             0.063 | 0.018 | 0.114 |
 | Klinse-Za | wolf       |             0.118 | 0.064 | 0.167 |
-| Quintette | wolf       |             0.115 | 0.030 | 0.197 |
+| Quintette | wolf       |             0.116 | 0.032 | 0.200 |
 
 ## Summarize vital rates
 
@@ -833,8 +833,8 @@ kable(summary.vr)
 | Klinse-Za | post-mgmt (wolf)     | 2013-2021 |        0.88 | 0.83-0.92 |        0.16 | 0.14-0.19 |                   0.21 | 0.17-0.26    |
 | Klinse-Za | post-mgmt (wolf+pen) | 2014-2021 |        0.90 | 0.9-0.9   |        0.28 | 0.28-0.28 |                   0.30 | 0.3-0.3      |
 | Klinse-Za | pre-mgmt             | 1995-2012 |        0.78 | 0.75-0.81 |        0.15 | 0.13-0.17 |                   0.19 | 0.15-0.24    |
-| Quintette | post-mgmt            | 2016-2021 |        0.88 | 0.83-0.91 |        0.18 | 0.16-0.21 |                   0.28 | 0.22-0.36    |
-| Quintette | pre-mgmt             | 2002-2015 |        0.85 | 0.82-0.88 |        0.13 | 0.12-0.15 |                   0.15 | 0.12-0.2     |
+| Quintette | post-mgmt            | 2016-2021 |        0.87 | 0.83-0.91 |        0.18 | 0.16-0.21 |                   0.28 | 0.22-0.36    |
+| Quintette | pre-mgmt             | 2002-2015 |        0.85 | 0.82-0.88 |        0.13 | 0.12-0.15 |                   0.15 | 0.12-0.21    |
 
 ``` r
 # summary.vr%>%
@@ -928,7 +928,7 @@ ggplot(aes(x = value,fill=Treatment)) +
 ![](README_files/figure-gfm/summarise%20over%20improved-1.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots", "refined_KZ_effect_individudal.png"), width=11, height=5)
+ggsave(here::here("plots", "refined_KZ_effect_individudal.png"), width=11, height=5, dpi=500, bg="white")
 
 #KZ Effect TOGETHER
 kz_effects%>%
@@ -963,7 +963,7 @@ ggplot(aes(x = value,fill=Treatment)) +
 ![](README_files/figure-gfm/summarise%20over%20improved-2.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots", "refined_KZ_effects.png"), width=11, height=5)
+ggsave(here::here("plots", "refined_KZ_effects.png"), width=11, height=5, dpi=500, bg="white")
 ```
 
 ## Refined Wolf reduction
@@ -987,7 +987,7 @@ ggsave(here::here("plots", "refined_KZ_effects.png"), width=11, height=5)
 ![](README_files/figure-gfm/Refined%20Wolf%20Control-1.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots", "refined_wolf_effect.png"), width=7, height=5)
+ggsave(here::here("plots", "refined_wolf_effect.png"), width=7, height=5, dpi=500, bg="white")
 ```
 
 ## Summarize effect of refined treatments
@@ -1022,7 +1022,7 @@ kable(summary.effect.refined)
 | Klinse-Za | refined wolf + refined pen |             0.169 | 0.146 | 0.193 |
 | Klinse-Za | refined pen                |             0.065 | 0.014 | 0.124 |
 | Klinse-Za | refined wolf               |             0.096 | 0.024 | 0.160 |
-| Quintette | Refined wolf               |             0.182 | 0.120 | 0.244 |
+| Quintette | Refined wolf               |             0.183 | 0.121 | 0.247 |
 
 ## Summarize refined period population growth
 

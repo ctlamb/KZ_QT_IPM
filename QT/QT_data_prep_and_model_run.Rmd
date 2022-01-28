@@ -242,10 +242,10 @@ model_parms <- c("lambda","logla",
 
 
 nt <- 10
-nb <- 75000 # 3000
-nc <- 3
+nb <- 50000
+nc <- 4
 nad <- 5000
-ni <- 200000 # 20000
+ni <- 200000
 
 out_rnd_eff <- jagsUI::jags(ipm_dat, 
 	inits = ipm_inits,
